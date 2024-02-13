@@ -25,4 +25,4 @@ jobs:
         run: docker build -t your-image-name .
 
       - name: Run Docker container
-        run: docker run -d -p 8000:8000 --name eprsystemformekedoina eprsystemformekedoina-erp_backend
+        run: docker run -d -p 8000:8000 --name eprsystemformekedoina eprsystemformekedoina-erp_backend:latest
