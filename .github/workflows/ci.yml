@@ -26,7 +26,7 @@ jobs:
       - name: Build docker
         run: |
           echo ---Building and starting up docker---
-          docker-compose-up -f ./code_avengers/docker-compose.yml 
+          docker compose up -f ./code_avengers/docker-compose.yml 
           echo ---Containers up---
       # - name: Run Docker container
       #   run: docker run -d -p 8000:8000 --name eprsystemformekedoina eprsystemformekedoina-erp_backend:latest
