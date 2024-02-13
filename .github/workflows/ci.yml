@@ -22,10 +22,10 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        
+
       - name: Install Docker Compose
         run: |
-          sudo apt-get install docker-compose
+           apt-get install docker-compose
 
       - name: Build docker
         run: |
