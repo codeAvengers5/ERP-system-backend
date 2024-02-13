@@ -22,15 +22,11 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-
-      - name: Install Docker Compose
-        run: |
-           apt-get install docker-compose
-
+        
       - name: Build docker
         run: |
           echo ---Building and starting up docker---
-          docker-compose -f ./code_avengers/docker-compose.yml up -d
+          docker-compose -f ./code_avengers/docker-compose.yml up -d --build
           echo ---Containers up---
       # - name: Run Docker container
       #   run: docker run -d -p 8000:8000 --name eprsystemformekedoina eprsystemformekedoina-erp_backend:latest
