@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build:
+  docker:
     runs-on: ubuntu-latest
     container:
       image: edlawitg/code_avengers:erp-backend
