@@ -28,11 +28,11 @@ jobs:
           # Install Docker Compose using wget
           wget -O docker-compose "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)"
           chmod +x docker-compose
-          
+
       - name: Build docker
         run: |
           echo ---Building and starting up docker---
-          docker-compose up -f "docker-compose.yml" up -d --build
+          docker compose up -f "docker-compose.yml" up -d --build
           echo ---Containers up---
       # - name: Run Docker container
       #   run: docker run -d -p 8000:8000 --name eprsystemformekedoina eprsystemformekedoina-erp_backend:latest
