@@ -22,16 +22,6 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-
-      - name: Build service s
-        run: docker-compose up -d
-
-      - name: List container
-        run: docker-compose ps
-
-      - name: Start the container
-        run: sudo docker-compose up --build -d api
-
       - name: Build docker
         run: |
           echo ---Building and starting up docker---
