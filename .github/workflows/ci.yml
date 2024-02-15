@@ -28,13 +28,7 @@ jobs:
           # Install Docker Compose using wget
           wget -O docker-compose "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)"
           chmod +x docker-compose
-
-      - name: Build service s
-        run: docker-compose up -d
-
-      - name: List container
-        run: docker-compose ps
-
+          
       - name: Build docker
         run: |
           echo ---Building and starting up docker---
