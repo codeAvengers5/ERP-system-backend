@@ -24,8 +24,8 @@ jobs:
         run: npm install
       - name: Install Docker Compose
         run: |
-          sudo apt update
-          sudo apt install docker-compose
+         apt-get update
+         apt-get install docker-compose
       - name: Build service s
         run: docker-compose up -d
 
