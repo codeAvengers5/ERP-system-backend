@@ -38,7 +38,7 @@ jobs:
       - name: Build docker
         run: |
           echo ---Building and starting up docker---
-          docker compose up -f "docker-compose.yml" up -d --build
+          docker-compose up -f "docker-compose.yml" up -d --build
           echo ---Containers up---
 
       # - name: Run the Container
