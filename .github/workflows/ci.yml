@@ -13,7 +13,7 @@ jobs:
 
     services:
       registry:
-        image: edlawitg/code_avengers
+        image: edlawitg/code_avengers:erp-backend
         ports:
           - 8000:8001
 
