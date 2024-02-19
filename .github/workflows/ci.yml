@@ -9,7 +9,13 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     container:
-      image: edlawitg/code_avengers:erp-backend
+      image: node:20-alpine
+
+    services:
+      registry:
+        image: edlawitg/code_avengers:erp-backend
+        ports:
+          - 8000:8001
 
     steps:
       - name: Checkout repository
@@ -34,5 +40,10 @@ jobs:
           echo ---Building and starting up docker---
           docker compose up -f "docker-compose.yml" up -d --build
           echo ---Containers up---
+
+      # - name: Run the Container
+      #   id: run
+      #   run: |
+      #     docker run
       # - name: Run Docker container
       #   run: docker run -d -p 8000:8000 --name eprsystemformekedoina eprsystemformekedoina-erp_backend:latest
