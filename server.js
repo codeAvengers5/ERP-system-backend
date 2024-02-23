@@ -2,12 +2,11 @@ const express = require("express");
 const mongoose = require("mongoose");
 const app = express();
 const { connectDB } = require("./config/db");
+const UserRouter = require("./routes/routers");
 require("dotenv").config();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.get("/",(req,res)=>{
-  res.send("Hola")
-})
+app.use(UserRouter)
 connectDB()
   .then(() => {
     app.listen(process.env.PORT, () => {
