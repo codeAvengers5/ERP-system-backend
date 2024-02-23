@@ -1,10 +1,6 @@
 const mongoose = require('mongoose');
 
 const appointedEventSchema = new mongoose.Schema({
-  appoint_id: {
-    type: Number,
-    required: true,
-  },
   payment_id: {
     type: String,
     required: true,

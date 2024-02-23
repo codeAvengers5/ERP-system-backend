@@ -1,10 +1,6 @@
 const mongoose = require('mongoose');
 
 const contactSchema = new mongoose.Schema({
-  contact_id: {
-    type: Number,
-    required: true,
-  },
   full_name: {
     type: String,
     required: true,

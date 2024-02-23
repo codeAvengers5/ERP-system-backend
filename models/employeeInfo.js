@@ -1,19 +1,26 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const employeeInfoSchema = new mongoose.Schema({
   employee_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Employee',
+    ref: "Employee",
     required: true,
     unique: true,
   },
-  age: {
+  start_date: {
+    type: Date,
+    required: true,
+  },
+  position: {
+    type: String,
+    required: true,
+  },
+  salary: {
     type: Number,
     required: true,
   },
   phone_no: {
     type: String,
-    required: true,
   },
   email: {
     type: String,
@@ -21,24 +28,34 @@ const employeeInfoSchema = new mongoose.Schema({
   },
   dob: {
     type: Date,
+  },
+  gender: {
+    type: String,
     required: true,
+  },
+  images: {
+    type: Array,
+    required: true,
+  },
+  image_profile:{
+    type:String,
+  },
+  maritalstatus: {
+    type: String,
   },
   address: {
     city: {
       type: String,
-      required: true,
     },
     sub_city: {
       type: String,
-      required: true,
     },
     woreda: {
       type: String,
-      required: true,
     },
   },
 });
 
-const EmployeeInfo = mongoose.model('EmployeeInfo', employeeInfoSchema);
+const EmployeeInfo = mongoose.model("EmployeeInfo", employeeInfoSchema);
 
 module.exports = EmployeeInfo;

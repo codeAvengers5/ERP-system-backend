@@ -1,10 +1,6 @@
 const mongoose = require('mongoose');
 
 const attendanceSchema = new mongoose.Schema({
-  attendance_id: {
-    type: Number,
-    required: true,
-  },
   status: {
     type: String,
     required: true,

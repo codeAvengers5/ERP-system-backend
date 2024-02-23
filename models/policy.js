@@ -1,10 +1,6 @@
 const mongoose = require('mongoose');
 
 const policySchema = new mongoose.Schema({
-  policy_id: {
-    type: Number,
-    required: true,
-  },
   employee_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Employee',

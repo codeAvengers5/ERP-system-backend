@@ -1,10 +1,6 @@
 const mongoose = require('mongoose');
 
 const promotionSchema = new mongoose.Schema({
-  promotion_id: {
-    type: Number,
-    required: true,
-  },
   title: {
     type: String,
     required: true,

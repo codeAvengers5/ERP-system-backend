@@ -1,10 +1,6 @@
 const mongoose = require('mongoose');
 
 const newsSchema = new mongoose.Schema({
-  news_id: {
-    type: Number,
-    required: true,
-  },
   title: {
     type: String,
     required: true,
