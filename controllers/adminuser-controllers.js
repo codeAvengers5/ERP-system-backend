@@ -4,7 +4,9 @@ const Role = require("../models/role");
 const EmployeeInfo = require("../models/employeeInfo");
 const hashPassword = require("../middleware/hashPassword");
 const fs = require("fs");
+const bcrypt = require("bcryptjs");
 const cloudinary = require("../config/coludinary");
+const generateToken = require("../middleware/generateToken");
 const registerValidator = joi.object({
   full_name: joi.string().required(),
   email: joi.string().email().required(),
@@ -23,7 +25,7 @@ const registerValidator = joi.object({
         path: joi.string().required(),
         originalname: joi.string().required(),
         encoding: joi.string().required(),
-        destination:joi.string().required(),
+        destination: joi.string().required(),
         mimetype: joi.string().valid("image/jpeg", "image/png").required(),
         size: joi.number().required(),
       })
@@ -47,23 +49,23 @@ async function RegisterAdminUser(req, res, next) {
 
   // for (const file of images) {
   //   const { filename, mimetype, size } = file;}
-    const { error } = registerValidator.validate({
-      full_name,
-      email,
-      password,
-      position,
-      role_name,
-      start_date,
-      salary,
-      gender,
-      images,
-    });
+  const { error } = registerValidator.validate({
+    full_name,
+    email,
+    password,
+    position,
+    role_name,
+    start_date,
+    salary,
+    gender,
+    images,
+  });
 
-    if (error) {
-      console.log("Having error...");
-      return res.status(400).json({ error: error.details[0].message });
-    }
-  
+  if (error) {
+    console.log("Having error...");
+    return res.status(400).json({ error: error.details[0].message });
+  }
+
   const uploader = async (path) => await cloudinary.uploads(path, "Images");
 
   try {
@@ -104,6 +106,13 @@ async function RegisterAdminUser(req, res, next) {
           message: "Employee account created successfully",
           value: { employeeInfo },
         });
+        const token = await generateToken({ id: employee._id });
+        if (!token) return next({ status: 500 });
+        res.cookie("jwt", token, {
+          httpOnly: true,
+          secure: false,
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
       }
     } else {
       return res.status(405).json({
@@ -115,4 +124,31 @@ async function RegisterAdminUser(req, res, next) {
     res.status(500).json({ error: error });
   }
 }
-module.exports = { RegisterAdminUser };
+async function LoginAdminUser(req, res, next) {
+  const { email, password } = req.body;
+  if (!email || !password)
+    return res
+      .status(400)
+      .json({ Error: "Email and Password can not be Empty" });
+  const account = await Employee.findOne({ email: email });
+  if (!account)
+    return res.status(400).json({ Error: "Invalid Email or Password" });
+  const validPassword = bcrypt.compareSync(password, account.password);
+  if (!validPassword) {
+    return res.status(403).send({ auth: false, token: null });
+  }
+  try {
+    const token = await generateToken({ id: account._id });
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    res.status(200).json({ token: token, Msg: "LoggedIn" });
+  } catch (error) {
+    console.log("Login failed with error : ", error);
+    return res.status(500).json({ Error: error });
+  }
+}
+module.exports = { RegisterAdminUser, LoginAdminUser };
