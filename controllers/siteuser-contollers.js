@@ -13,6 +13,7 @@ const {
   sendRestPasswordLink,
 } = require("../helpers/sendConfirmationEmail");
 
+
 const registerValidator = joi.object({
   username: joi.string().required(),
   email: joi.string().email().required(),
@@ -97,7 +98,7 @@ async function ConfirmEmail(req, res, next) {
   }
 }
 async function LoginSiteUser(req, res, next) {
-  const { email, password } = req.body;
+  const { email, password,rememberMe } = req.body;
   if (!email || !password)
     return res
       .status(400)
@@ -111,12 +112,18 @@ async function LoginSiteUser(req, res, next) {
   }
   try {
     const token = await generateToken({ id: account._id });
-    res.cookie("jwt", token, {
+    const cookieOptions = {
       httpOnly: true,
-      secure: false,
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+      secure: req.secure || req.headers["x-forwarded-proto"] === "https", // Adjust based on your deployment environment
+    };
+
+    if (rememberMe) {
+      cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+    } else {
+      cookieOptions.maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+    }
+
+    res.cookie("jwt", token, cookieOptions);
     res.status(200).json({ token: token, msg: "LoggedIn" });
   } catch (error) {
     console.log("Login failed with error : ", error);
