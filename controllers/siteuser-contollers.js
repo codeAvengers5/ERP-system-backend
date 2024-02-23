@@ -1,4 +1,5 @@
 const joi = require("@hapi/joi");
+const jwt = require("jsonwebtoken");
 const hashPassword = require("../middleware/hashPassword");
 const User = require("../models/user");
 const generateToken = require("../middleware/generateToken");
@@ -9,6 +10,7 @@ const {
 const {
   sendConfirmationEmail,
   sendWelcomeEmail,
+  sendRestPasswordLink,
 } = require("../helpers/sendConfirmationEmail");
 
 const registerValidator = joi.object({
@@ -73,7 +75,7 @@ async function RegisterSiteUser(req, res, next) {
     return res.status(500).json(error);
   }
 }
-async function confirmEmail(req, res, next) {
+async function ConfirmEmail(req, res, next) {
   const { confirmationCode } = req.body;
   try {
     const user = await User.findOne({ confirmationCode });
@@ -121,8 +123,64 @@ async function LoginSiteUser(req, res, next) {
     return res.status(500).json({ Error: error });
   }
 }
+async function ForgotPassword(req, res, next) {
+  const { email } = req.body;
+  const user = await User.findOne({ email: email });
+  if (!user) {
+    return res
+      .status(400)
+      .json({ error: "User with this email does not exist" });
+  } else {
+    try {
+      const token = await generateToken({ id: user._id });
+      if (!token) return next({ status: 500 });
+      res.cookie("jwt", token, {
+        httpOnly: true,
+        secure: false,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+      await sendRestPasswordLink(email, user._id, token);
+      res
+        .status(200)
+        .json({ mgs: "verfiy with the link", token: token, id: user._id });
+    } catch (err) {
+      console.log(err);
+    }
+  }
+}
+
+async function ResetPassword(req, res, next) {
+  const { id, token } = req.params;
+  const { password } = req.body;
+
+  let hashedpassword = await bcrypt.hash(password, 10);
+  jwt.verify(token, process.env.JWT_TOKEN_KEY, async (err, decoded) => {
+    if (err) {
+      return res.json({ Status: "Error with token" });
+    } else {
+      try {
+        const updatedEmployee = await User.findOneAndUpdate(
+          { _id: id },
+          { $set: { password: hashedpassword } },
+          { new: true }
+        );
+        if (!updatedEmployee) {
+          return next(new Error("Employee not found"));
+        }
+        res.status(200).json({ mgs: "Password has been reset successfully" });
+
+        console.log("Password has been reset successfully");
+      } catch (error) {
+        console.error("Error resetting password:", error);
+        res.status(500).json({ message: error });
+      }
+    }
+  });
+}
 module.exports = {
   RegisterSiteUser,
   LoginSiteUser,
-  confirmEmail,
+  ConfirmEmail,
+  ForgotPassword,
+  ResetPassword,
 };

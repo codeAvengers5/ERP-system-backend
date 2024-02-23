@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema({
     defaultValue: "null",
   },
   isConfirmed: {
-    type: DataTypes.BOOLEAN,
+    type: Boolean,
     allowNull: false,
     defaultValue: false,
   },
