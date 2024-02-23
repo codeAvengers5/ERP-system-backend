@@ -137,6 +137,7 @@ async function LoginAdminUser(req, res, next) {
     return res.status(400).json({ Error: "Invalid Email or Password" });
   const validPassword = bcrypt.compareSync(password, account.password);
   if (!validPassword) {
+    console.log(validPassword);
     return res.status(403).send({ auth: false, token: null });
   }
   try {
@@ -206,10 +207,37 @@ async function ResetPassword(req, res, next) {
     }
   });
 }
+async function UpdatePassword(req, res, next) {
+  const { id } = req.params;
+  const { oldPassword, newPassword } = req.body;
+
+  try {
+    const employee = await Employee.findById(id);
+
+    if (!employee) {
+      return next(new Error("Employee not found"));
+    }
+    const isPasswordMatch = bcrypt.compareSync(oldPassword, employee.password);
+    if (!isPasswordMatch) {
+      return res.status(400).json({ error: "Old password is incorrect" });
+    }
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    employee.password = hashedNewPassword;
+    await employee.save();
+
+    res
+      .status(200)
+      .json({ success: true, message: "Password updated successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
 
 module.exports = {
   RegisterAdminUser,
   LoginAdminUser,
   ForgotPassword,
   ResetPassword,
+  UpdatePassword
 };
