@@ -20,5 +20,5 @@ router.post("/registeradmins", upload.array("images", 10), RegisterAdminUser);
 router.post("/loginadmin", LoginAdminUser);
 router.post("/forgotpassword", ForgotPassword);
 router.post("/resetpassword/:id/:token", ResetPassword);
-router.post("/updatepassword/:id",UpdatePassword)
+router.post("/updatepassword/:id", UpdatePassword);
 module.exports = router;

@@ -239,5 +239,5 @@ module.exports = {
   LoginAdminUser,
   ForgotPassword,
   ResetPassword,
-  UpdatePassword
+  UpdatePassword,
 };

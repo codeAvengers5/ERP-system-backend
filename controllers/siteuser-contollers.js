@@ -13,7 +13,6 @@ const {
   sendRestPasswordLink,
 } = require("../helpers/sendConfirmationEmail");
 
-
 const registerValidator = joi.object({
   username: joi.string().required(),
   email: joi.string().email().required(),
@@ -98,7 +97,7 @@ async function ConfirmEmail(req, res, next) {
   }
 }
 async function LoginSiteUser(req, res, next) {
-  const { email, password,rememberMe } = req.body;
+  const { email, password, rememberMe } = req.body;
   if (!email || !password)
     return res
       .status(400)
@@ -217,5 +216,5 @@ module.exports = {
   ConfirmEmail,
   ForgotPassword,
   ResetPassword,
-  UpdatePassword
+  UpdatePassword,
 };
