@@ -21,4 +21,6 @@ router.post("/loginadmin", LoginAdminUser);
 router.post("/forgotpassword", ForgotPassword);
 router.post("/resetpassword/:id/:token", ResetPassword);
 router.post("/updatepassword/:id", UpdatePassword);
+router.post("/forgotpassword", ForgotPassword);
+router.post("/resetpassword/:id/:token", ResetPassword);
 module.exports = router;
