@@ -34,3 +34,20 @@ exports.sendWelcomeEmail = async (email, username) => {
 
   await transporter.sendMail(mailOptions);
 };
+
+exports.sendRestPasswordLink = async (email,id,token) => {
+  var mailOptions = {
+    from: 'Code Avengers',
+    to:email,
+    subject: 'Reset Password Link',
+    text: `http://localhost:3000/reset_password/${id}/${token}`
+  };
+
+  transporter.sendMail(mailOptions, function (error, info) {
+    if (error) {
+      console.log(error);
+    } else {
+      return res.send({ Status: "Success" });
+    }
+  });
+};
