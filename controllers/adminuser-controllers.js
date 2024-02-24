@@ -8,10 +8,10 @@ const fs = require("fs");
 const bcrypt = require("bcryptjs");
 const cloudinary = require("../config/coludinary");
 const generateToken = require("../middleware/generateToken");
-const crypto =require("crypto");
-const {encode} =require ("hi-base32");
-const OTPAuth =require ("otpauth");
-const QRCode =require ("qrcode");
+const crypto = require("crypto");
+const { encode } = require("hi-base32");
+const OTPAuth = require("otpauth");
+const QRCode = require("qrcode");
 const registerValidator = joi.object({
   full_name: joi.string().required(),
   email: joi.string().email().required(),
@@ -142,6 +142,9 @@ async function LoginAdminUser(req, res, next) {
   if (!validPassword) {
     return res.status(403).send({ auth: false, token: null });
   }
+  if (!account.enable2fa) {
+    return res.send({msg:"please enable 2fa first"})
+  }
   try {
     const token = await generateToken({ id: account._id });
     res.cookie("jwt", token, {
@@ -157,22 +160,16 @@ async function LoginAdminUser(req, res, next) {
   }
 }
 async function Enable2FA(req, res, next) {
-  const { userId } = req.body;
+  const { id } = req.params;
 
-  if (!await Employee.findOne({ _id: userId })) {
+  if (!(await Employee.findOne({ _id: id }))) {
     return res.status(404).json({
       status: "fail",
       message: "User does not exist",
     });
   }
-
-  // Generate secret key for the user
   const base32_secret = generateBase32Secret();
-
-  // Store secret key in User object
-  await Employee.updateOne({ _id: userId }, { secrets2fa: base32_secret });
-
-  // Generate TOTP auth url
+  await Employee.updateOne({ _id: id }, { secrets2fa: base32_secret });
   const totp = new OTPAuth.TOTP({
     issuer: "codeavengers.com",
     label: "codeavengers",
@@ -198,44 +195,44 @@ async function Enable2FA(req, res, next) {
       },
     });
   });
-};
-async function Verify2FA (req ,res,next){
-  const { userId, token } = req.body;
-  const user = await Employee.findOne({_id: userId});
-  if(!user) {
-      return res.status(404).json({
-          status: "fail",
-          message: "User does not exist"
-      })
+}
+async function Verify2FA(req, res, next) {
+  const { id, token } = req.params;
+  const user = await Employee.findOne({ _id: id });
+  if (!user) {
+    return res.status(404).json({
+      status: "fail",
+      message: "User does not exist",
+    });
   }
   // verify the token
   const totp = new OTPAuth.TOTP({
-      issuer: "codeninjainsights.com",
-      label: "codeninjainsights",
-      algorithm: "SHA1",
-      digits: 6,
-      secret: user.secrets2fa
+    issuer: "codeninjainsights.com",
+    label: "codeninjainsights",
+    algorithm: "SHA1",
+    digits: 6,
+    secret: user.secrets2fa,
   });
-  const delta = totp.validate({token});
+  const delta = totp.validate({ token });
 
-  if(delta === null) {
-      return res.status(401).json({
-          status: "fail",
-          message: "Authentication failed"
-      })
+  if (delta === null) {
+    return res.status(401).json({
+      status: "fail",
+      message: "Authentication failed",
+    });
   }
 
   // update the  user status
-  if(!user.enable2fa) {
-      await Employee.updateOne({_id: userId}, {enable2fa: true});
+  if (!user.enable2fa) {
+    await Employee.updateOne({ _id: id }, { enable2fa: true });
   }
 
   res.json({
-      status: "success",
-      data: {
-          otp_valid: true
-      }
-  })
+    status: "success",
+    data: {
+      otp_valid: true,
+    },
+  });
 }
 
-module.exports = { RegisterAdminUser, LoginAdminUser,Enable2FA,Verify2FA};
+module.exports = { RegisterAdminUser, LoginAdminUser, Enable2FA, Verify2FA };
