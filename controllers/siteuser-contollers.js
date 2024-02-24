@@ -13,7 +13,6 @@ const {
   sendRestPasswordLink,
 } = require("../helpers/sendConfirmationEmail");
 
-
 const registerValidator = joi.object({
   username: joi.string().required(),
   email: joi.string().email().required(),
@@ -98,7 +97,7 @@ async function ConfirmEmail(req, res, next) {
   }
 }
 async function LoginSiteUser(req, res, next) {
-  const { email, password,rememberMe } = req.body;
+  const { email, password, rememberMe } = req.body;
   if (!email || !password)
     return res
       .status(400)
@@ -184,10 +183,37 @@ async function ResetPassword(req, res, next) {
     }
   });
 }
+async function UpdatePassword(req, res, next) {
+  const { id } = req.params;
+  const { oldPassword, newPassword } = req.body;
+
+  try {
+    const user = await User.findById(id);
+
+    if (!user) {
+      return next(new Error("Employee not found"));
+    }
+    const isPasswordMatch = bcrypt.compareSync(oldPassword, user.password);
+    if (!isPasswordMatch) {
+      return res.status(400).json({ error: "Old password is incorrect" });
+    }
+    let hashedNewpassword = await bcrypt.hash(password, 10);
+    user.password = hashedNewpassword;
+    await user.save();
+
+    res
+      .status(200)
+      .json({ success: true, message: "Password updated successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
 module.exports = {
   RegisterSiteUser,
   LoginSiteUser,
   ConfirmEmail,
   ForgotPassword,
   ResetPassword,
+  UpdatePassword,
 };
