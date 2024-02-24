@@ -3,10 +3,15 @@ const Employee = require("../models/employee");
 const Role = require("../models/role");
 const EmployeeInfo = require("../models/employeeInfo");
 const hashPassword = require("../middleware/hashPassword");
+const generateBase32Secret = require("../helpers/generateSecret");
 const fs = require("fs");
 const bcrypt = require("bcryptjs");
 const cloudinary = require("../config/coludinary");
 const generateToken = require("../middleware/generateToken");
+const crypto =require("crypto");
+const {encode} =require ("hi-base32");
+const OTPAuth =require ("otpauth");
+const QRCode =require ("qrcode");
 const registerValidator = joi.object({
   full_name: joi.string().required(),
   email: joi.string().email().required(),
@@ -151,4 +156,86 @@ async function LoginAdminUser(req, res, next) {
     return res.status(500).json({ Error: error });
   }
 }
-module.exports = { RegisterAdminUser, LoginAdminUser };
+async function Enable2FA(req, res, next) {
+  const { userId } = req.body;
+
+  if (!await Employee.findOne({ _id: userId })) {
+    return res.status(404).json({
+      status: "fail",
+      message: "User does not exist",
+    });
+  }
+
+  // Generate secret key for the user
+  const base32_secret = generateBase32Secret();
+
+  // Store secret key in User object
+  await Employee.updateOne({ _id: userId }, { secrets2fa: base32_secret });
+
+  // Generate TOTP auth url
+  const totp = new OTPAuth.TOTP({
+    issuer: "codeavengers.com",
+    label: "codeavengers",
+    algorithm: "SHA1",
+    digits: 6,
+    secret: base32_secret,
+  });
+  const otpauth_url = totp.toString();
+
+  QRCode.toDataURL(otpauth_url, (err, qrUrl) => {
+    if (err) {
+      return res.status(500).json({
+        status: "fail",
+        message: "Error while generating QR Code",
+      });
+    }
+
+    res.json({
+      status: "success",
+      data: {
+        qrCodeUrl: qrUrl,
+        secret: base32_secret,
+      },
+    });
+  });
+};
+async function Verify2FA (req ,res,next){
+  const { userId, token } = req.body;
+  const user = await Employee.findOne({_id: userId});
+  if(!user) {
+      return res.status(404).json({
+          status: "fail",
+          message: "User does not exist"
+      })
+  }
+  // verify the token
+  const totp = new OTPAuth.TOTP({
+      issuer: "codeninjainsights.com",
+      label: "codeninjainsights",
+      algorithm: "SHA1",
+      digits: 6,
+      secret: user.secrets2fa
+  });
+  const delta = totp.validate({token});
+
+  if(delta === null) {
+      return res.status(401).json({
+          status: "fail",
+          message: "Authentication failed"
+      })
+  }
+
+  // update the  user status
+  if(!user.enable2fa) {
+      await Employee.updateOne({_id: userId}, {enable2fa: true});
+  }
+
+  res.json({
+      status: "success",
+      data: {
+          otp_valid: true
+      }
+  })
+}
+
+module.exports = { RegisterAdminUser, LoginAdminUser,Enable2FA,Verify2FA};
