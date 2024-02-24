@@ -1,15 +1,9 @@
 const express = require("express");
 const {
-  RegisterSiteUser,
-  LoginSiteUser,
-  ConfirmEmail,
-} = require("../controllers/siteuser-contollers");
-const {
   RegisterAdminUser,
   LoginAdminUser,
   Enable2FA,
   Verify2FA,
-=======
   ForgotPassword,
   ResetPassword,
   UpdatePassword,
