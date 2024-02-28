@@ -9,8 +9,9 @@ const {
   UpdatePassword,
 } = require("../controllers/adminuser-controllers");
 const upload = require("../config/multer");
+const { isAuthenticated, isItAdmin } = require("../middleware/auth");
 const router = express.Router();
-router.get("/", (req, res) => {
+router.get("/itadmin", isAuthenticated,isItAdmin,(req, res) => {
   res.send("Welcome");
 });
 router.post("/registeradmins", upload.array("images", 10), RegisterAdminUser);
