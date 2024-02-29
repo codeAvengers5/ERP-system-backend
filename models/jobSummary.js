@@ -1,9 +1,13 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const jobSummarySchema = new mongoose.Schema({
   job_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'JobPost',
+    ref: "JobPost",
+    required: true,
+  },
+  full_name: {
+    type: String,
     required: true,
   },
   cv: {
@@ -20,11 +24,11 @@ const jobSummarySchema = new mongoose.Schema({
   },
   user_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: "User",
     required: true,
   },
 });
 
-const JobSummary = mongoose.model('JobSummary', jobSummarySchema);
+const JobSummary = mongoose.model("JobSummary", jobSummarySchema);
 
 module.exports = JobSummary;
