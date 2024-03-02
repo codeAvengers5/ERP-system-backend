@@ -1,6 +1,5 @@
 const joi = require("@hapi/joi");
 const JobPost = require("../models/jobPost");
-// const cloudinary = require("../config/coludinary");
 const cloudinary = require("cloudinary").v2;
 const dotenv = require("dotenv");
 dotenv.config();
@@ -11,7 +10,6 @@ cloudinary.config({
 });
 const JobSummary = require("../models/jobSummary");
 const fs = require("fs");
-// const upload = multer({ storage }).single("cv");
 const jobPostValidator = joi.object({
   full_name: joi.string().required(),
   email: joi.string().email().required(),
@@ -110,7 +108,17 @@ async function JobApply(req, res) {
     return res.status(500).json({ error: error });
   }
 }
+async function JobSummary(req, res) {
+  try {
+    const jobsummary = await JobSummary.find({});
+    res.json(jobsummary);
+  } catch (error) {
+    console.log(`Error in viewing the job post: ${error}`);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+}
 module.exports = {
   ViewJob,
   JobApply,
+  JobSummary,
 };
