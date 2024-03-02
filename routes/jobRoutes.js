@@ -1,26 +1,41 @@
 const express = require("express");
 const {
-    createJobPost,
-    getAllJobPosts,
-    getJobPostById,
-    updateJobPostById,
-    deleteJobPostById,
-}=require("../controllers/jobpost-controller");
+  createJobPost,
+  getAllJobPosts,
+  getJobPostById,
+  updateJobPostById,
+  deleteJobPostById,
+} = require("../controllers/jobpost-controller");
 const router = express.Router();
-const { isAuthenticated, isHRAdmin ,isEmployee} = require("../middleware/auth");
+const {
+  isAuthenticated,
+  isHRAdmin,
+} = require("../middleware/auth");
 
-router.post('/createJobPosts',isAuthenticated,isHRAdmin,createJobPost);
-router.get('/getJobPosts',isAuthenticated,isHRAdmin,getAllJobPosts);
-router.get('/getJobPostsId/:id',isAuthenticated,isHRAdmin,getJobPostById);
-router.put('/updateJobPosts/:id',isAuthenticated,isHRAdmin,updateJobPostById);
-router.delete('/deleteJobPosts/:id',isAuthenticated,isHRAdmin,deleteJobPostById);
-module.exports = router;
 const { ViewJob, JobApply } = require("../controllers/jobapply-contollers");
-const { ViewJob, JobApply, JobSummary } = require("../controllers/jobapply-contollers");
+const {
+  ViewJob,
+  JobApply,
+  JobSummary,
+} = require("../controllers/jobapply-contollers");
 const { uploadCV } = require("../config/multer");
 const { isAuthenticated, isHRAdmin } = require("../middleware/auth");
-const router = express.Router();
+router.post("/createJobPosts", isAuthenticated, isHRAdmin, createJobPost);
+router.get("/getJobPosts", isAuthenticated, isHRAdmin, getAllJobPosts);
+router.get("/getJobPostsId/:id", isAuthenticated, isHRAdmin, getJobPostById);
+router.put(
+  "/updateJobPosts/:id",
+  isAuthenticated,
+  isHRAdmin,
+  updateJobPostById
+);
+router.delete(
+  "/deleteJobPosts/:id",
+  isAuthenticated,
+  isHRAdmin,
+  deleteJobPostById
+);
 router.get("/joblist", ViewJob);
 router.post("/jobapply/:id", uploadCV.single("cv"), JobApply);
-router.get("/jobsummary", isAuthenticated,isHRAdmin,JobSummary)
+router.get("/jobsummary", isAuthenticated, isHRAdmin, JobSummary);
 module.exports = router;
