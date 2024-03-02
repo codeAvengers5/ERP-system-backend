@@ -5,18 +5,25 @@ const { connectDB } = require("./config/db");
 const adminUserRoute = require("./routes/adminusersRoutes");
 const siteUserRoute = require("./routes/siteuserRoutes");
 const promotionRoute = require("./routes/promotionRoutes");
-const jobPostRoute = require("./routes/jobRoutes");
+const jobRoute = require("./routes/jobRoutes");
 const cookieParser = require("cookie-parser");
+const session = require("express-session");
 require("dotenv").config();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(
+  session({
+    secret: "your-secret-key",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 30 * 60 * 1000 }
+  })
+);
 app.use(adminUserRoute);
 app.use(siteUserRoute);
 app.use(promotionRoute);
-app.use(jobPostRoute);
-
-
+app.use(jobRoute)
 connectDB()
   .then(() => {
     app.listen(process.env.PORT, () => {
