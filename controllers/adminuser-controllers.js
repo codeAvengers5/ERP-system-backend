@@ -238,7 +238,6 @@ async function Verify2FA(req, res, next) {
   });
 }
 
-module.exports = { RegisterAdminUser, LoginAdminUser, Enable2FA, Verify2FA };
 async function ForgotPassword(req, res, next) {
   const { email } = req.body;
   const user = await Employee.findOne({ email: email });
@@ -324,4 +323,6 @@ module.exports = {
   ForgotPassword,
   ResetPassword,
   UpdatePassword,
+  Enable2FA,
+  Verify2FA
 };
