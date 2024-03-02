@@ -334,5 +334,5 @@ module.exports = {
   ResetPassword,
   UpdatePassword,
   Enable2FA,
-  Verify2FA,
+  Verify2FA
 };
