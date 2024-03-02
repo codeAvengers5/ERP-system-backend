@@ -3,7 +3,6 @@ async function isAuthenticated(req, res, next) {
   let token;
   if (req.cookies.jwt) {
     token = req.cookies.jwt;
-    console.log("Here is the token");
   } else if (
     req.headers.authorization &&
     req.headers.authorization.startsWith("Bearer")
@@ -19,8 +18,7 @@ async function isAuthenticated(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_TOKEN_KEY);
-    req.user = decoded;
-    console.log(req.user);
+    req.user =decoded
     next();
   } catch (error) {
     console.log(error);

@@ -53,9 +53,6 @@ async function RegisterAdminUser(req, res, next) {
     gender,
   } = req.body;
   const images = req.files;
-
-  // for (const file of images) {
-  //   const { filename, mimetype, size } = file;}
   const { error } = registerValidator.validate({
     full_name,
     email,
@@ -145,11 +142,13 @@ async function LoginAdminUser(req, res, next) {
     console.log(validPassword);
     return res.status(403).send({ auth: false, token: null });
   }
-  if (!account.enable2fa) {
-    return res.send({msg:"please enable 2fa first"})
-  }
+  // if (!account.enable2fa) {
+  //   return res.send({msg:"please enable 2fa first"})
+  // }
+  const role = await Role.findOne({ _id: account.role_id });
+
   try {
-    const token = await generateToken({ id: account._id });
+    const token = await generateToken({ id: account._id, role:role.role_name });
     res.cookie("jwt", token, {
       httpOnly: true,
       secure: false,

@@ -9,9 +9,9 @@ const {
 const router = express.Router();
 const { isAuthenticated, isHRAdmin ,isEmployee} = require("../middleware/auth");
 
-router.post('/createJobPosts/:id',createJobPost);
-router.get('/getJobPosts',getAllJobPosts);
-router.get('/getJobPostsId/:id',getJobPostById);
-router.put('/updateJobPosts/:id',updateJobPostById);
-router.delete('/deleteJobPosts/:id',deleteJobPostById);
+router.post('/createJobPosts',isAuthenticated,isHRAdmin,createJobPost);
+router.get('/getJobPosts',isAuthenticated,isHRAdmin,getAllJobPosts);
+router.get('/getJobPostsId/:id',isAuthenticated,isHRAdmin,getJobPostById);
+router.put('/updateJobPosts/:id',isAuthenticated,isHRAdmin,updateJobPostById);
+router.delete('/deleteJobPosts/:id',isAuthenticated,isHRAdmin,deleteJobPostById);
 module.exports = router;

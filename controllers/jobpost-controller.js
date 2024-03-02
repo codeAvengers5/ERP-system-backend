@@ -11,8 +11,19 @@ const jobPostValidator = joi.object({
 const createJobPost = async (req, res) => {
   try {
     const { title, description, requirement, responsibility, salary} = req.body;
+    const { error } = jobPostValidator.validate({
+      title,
+      description,
+      requirement,
+      responsibility,
+      salary,
+    });
+    if (error) {
+      console.log("Having error...");
+      return res.status(400).json({ error: error.details[0].message });
+    }
     
-    const hrAdminId = req.params.id;
+    const hrAdminId = req.user.id;
     const jobPost = new JobPost({
       title,
       description,

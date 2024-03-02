@@ -1,18 +1,34 @@
 const express = require("express");
 const {
-    createPromotion,
+  createPromotion,
   getAllPromotions,
   getPromotionById,
   updatePromotionById,
   deletePromotionById,
-}=require("../controllers/promotion-controller");
-const upload = require("../config/multer");
+} = require("../controllers/promotion-controller");
+const {uploadImages} = require("../config/multer");
 const router = express.Router();
-const { isAuthenticated, isHRAdmin ,isEmployee} = require("../middleware/auth");
+const { isAuthenticated, isHRAdmin } = require("../middleware/auth");
 
-router.post('/createPromotion/:id',upload.array("images", 10),createPromotion);
-router.get('/getAllPromotions',getAllPromotions);
-router.get('/getPromotionById/:id',getPromotionById);
-router.put('/updatePromotionById/:id',updatePromotionById);
-router.delete('/deletePromotionById/:id',deletePromotionById);
+router.post(
+  "/createPromotion",
+  isAuthenticated,
+  isHRAdmin,
+ uploadImages.array("images", 10),
+  createPromotion
+);
+router.get("/getAllPromotions", isAuthenticated, isHRAdmin, getAllPromotions);
+router.get(
+  "/getPromotionById/:id",
+  isAuthenticated,
+  isHRAdmin,
+  getPromotionById
+);
+router.put(
+  "/updatePromotionById/:id",
+  isAuthenticated,
+  isHRAdmin,
+  updatePromotionById
+);
+router.delete("/deletePromotionById/:id", deletePromotionById);
 module.exports = router;
