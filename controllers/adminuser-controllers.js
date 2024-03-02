@@ -153,14 +153,12 @@ async function LoginAdminUser(req, res, next) {
   if (!role) {
     return res.status(403).json({ ErrorMessage: "Role not found" });
   }
-  try {
     const accountId = account._id;
     const roleName = role.role_name;
     const payload = {
       id: accountId,
       role: roleName,
     };
-    const token = await generateToken(payload);
     res.cookie("jwt", token, {
       httpOnly: true,
       secure: false,
@@ -173,6 +171,7 @@ async function LoginAdminUser(req, res, next) {
     return res.status(500).json({ Error: error });
   }
 }
+
 async function Enable2FA(req, res) {
   const { id } = req.params;
 

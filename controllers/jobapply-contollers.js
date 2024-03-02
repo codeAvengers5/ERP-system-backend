@@ -2,14 +2,15 @@ const joi = require("@hapi/joi");
 const JobPost = require("../models/jobPost");
 const cloudinary = require("cloudinary").v2;
 const dotenv = require("dotenv");
+const JobSummary = require("../models/jobSummary");
+const fs = require("fs");
 dotenv.config();
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-const JobSummary = require("../models/jobSummary");
-const fs = require("fs");
+
 const jobPostValidator = joi.object({
   full_name: joi.string().required(),
   email: joi.string().email().required(),
@@ -108,7 +109,7 @@ async function JobApply(req, res) {
     return res.status(500).json({ error: error });
   }
 }
-async function JobSummary(req, res) {
+async function ViewJobSummary(req, res) {
   try {
     const jobsummary = await JobSummary.find({});
     res.json(jobsummary);
@@ -120,5 +121,5 @@ async function JobSummary(req, res) {
 module.exports = {
   ViewJob,
   JobApply,
-  JobSummary,
+  ViewJobSummary,
 };
