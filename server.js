@@ -5,6 +5,7 @@ const { connectDB } = require("./config/db");
 const adminUserRoute = require("./routes/adminusersRoutes");
 const siteUserRoute = require("./routes/siteuserRoutes");
 const jobRoute = require("./routes/jobRoutes");
+const promotionRoute = require("./routes/promotionRoutes");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
 require("dotenv").config();
@@ -22,6 +23,7 @@ app.use(
 app.use(adminUserRoute);
 app.use(siteUserRoute);
 app.use(jobRoute)
+app.use(promotionRoute)
 connectDB()
   .then(() => {
     app.listen(process.env.PORT, () => {
