@@ -1,31 +1,56 @@
 const multer = require("multer");
-const DIR = './uploads'
-const path = require('path');
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, DIR)
-    },
-    filename: (req, file, cb) => {
-        cb(
-          null,
-          file.fieldname + "-" + Date.now() + path.extname(file.originalname)
-        );
-      },
+const DIRimg = "./uploads/images";
+const DIRcv = "./uploads/cv";
+const path = require("path");
+const imageStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, DIRimg);
+  },
+  filename: (req, file, cb) => {
+    cb(
+      null,
+      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
+    );
+  },
+});
+const cvStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, DIRcv);
+  },
+  filename: (req, file, cb) => {
+    cb(
+      null,
+      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
+    );
+  },
+});
+const imageFileFilter = (req, file, cb) => {
+  if (file.mimetype === "image/jepg" || file.mimetype === "image/png") {
+    cb(null, true);
+  } else {
+    cb({ message: "Unsupported file format" }, false);
+  }
+};
+const cvFileFilter = (req, file, cb) => {
+  if (file.mimetype === "application/pdf") {
+    cb(null, true);
+  } else {
+    cb(
+      { message: "Unsupported file format for CV. Please upload a PDF file." },
+      false
+    );
+  }
+};
+const uploadImages = multer({
+  storage: imageStorage,
+  fileFilter: imageFileFilter,
 });
 
-const fileFilter =  (req, file, cb ) =>{
-    if(file.mimetype === "image/jepg" || file.mimetype === 'image/png'){
-        cb(null, true)
-    } else {
-        //reject file 
-        cb({message: "Unsupported file format"}, false)
-    }
-}
-
-const upload = multer({
-    storage:storage, 
-    limits:{fileSize: 1024 * 1024}, 
-    fileFilter:fileFilter
-})
-
-module.exports = upload;
+const uploadCV = multer({
+  storage: cvStorage,
+  fileFilter: cvFileFilter,
+});
+module.exports = {
+  uploadCV,
+  uploadImages,
+};

@@ -145,11 +145,22 @@ async function LoginAdminUser(req, res, next) {
     console.log(validPassword);
     return res.status(403).send({ auth: false, token: null });
   }
-  if (!account.enable2fa) {
-    return res.send({msg:"please enable 2fa first"})
+  // console.log(account.enable2fa);
+  // if (!account.enable2fa) {
+  //   return res.send({ msg: "please enable 2fa first" });
+  // }
+  const role = await Role.findOne({ _id: account.role_id });
+  if (!role) {
+    return res.status(403).json({ ErrorMessage: "Role not found" });
   }
   try {
-    const token = await generateToken({ id: account._id });
+    const accountId = account._id;
+    const roleName = role.role_name;
+    const payload = {
+      id: accountId,
+      role: roleName,
+    };
+    const token = await generateToken(payload);
     res.cookie("jwt", token, {
       httpOnly: true,
       secure: false,
@@ -162,7 +173,7 @@ async function LoginAdminUser(req, res, next) {
     return res.status(500).json({ Error: error });
   }
 }
-async function Enable2FA(req, res, next) {
+async function Enable2FA(req, res) {
   const { id } = req.params;
 
   if (!(await Employee.findOne({ _id: id }))) {
@@ -181,7 +192,6 @@ async function Enable2FA(req, res, next) {
     secret: base32_secret,
   });
   const otpauth_url = totp.toString();
-
   QRCode.toDataURL(otpauth_url, (err, qrUrl) => {
     if (err) {
       return res.status(500).json({
