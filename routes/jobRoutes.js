@@ -3,7 +3,6 @@ const { ViewJob, JobApply, JobSummary } = require("../controllers/jobapply-conto
 const { uploadCV } = require("../config/multer");
 const { isAuthenticated, isHRAdmin } = require("../middleware/auth");
 const router = express.Router();
-
 router.get("/joblist", ViewJob);
 router.post("/jobapply/:id", uploadCV.single("cv"), JobApply);
 router.get("/jobsummary", isAuthenticated,isHRAdmin,JobSummary)
