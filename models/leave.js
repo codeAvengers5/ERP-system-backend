@@ -1,11 +1,20 @@
-const mongoose = require('mongoose');
 
-const leaveSchema = new mongoose.Schema({
+const mongoose = require("mongoose");
+
+const leaveappSchema = new mongoose.Schema({
+  employee_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Employee",
+  },
   full_name: {
     type: String,
     required: true,
   },
-  position: {
+  duration: {
+    type: String,
+    required: true,
+  },
+  leave_date: {
     type: String,
     required: true,
   },
@@ -13,25 +22,13 @@ const leaveSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  duration: {
-    type: Number,
-    required: true,
-  },
-  leave_date: {
-    type: Date,
-    required: true,
-  },
   status: {
     type: String,
-    required: true,
-  },
-  employee_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Employee',
-    required: true,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
   },
 });
 
-const Leave = mongoose.model('Leave', leaveSchema);
+const LeaveApplication = mongoose.model("LeaveApplication", leaveappSchema);
 
-module.exports = Leave;
+module.exports = LeaveApplication;
