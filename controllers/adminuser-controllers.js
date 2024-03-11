@@ -14,6 +14,7 @@ const { encode } = require("hi-base32");
 const OTPAuth = require("otpauth");
 const QRCode = require("qrcode");
 const { sendRestPasswordLink } = require("../helpers/sendConfirmationEmail");
+const Notification = require("../models/notification");
 const registerValidator = joi.object({
   full_name: joi.string().required(),
   email: joi.string().email().required(),
@@ -40,7 +41,15 @@ const registerValidator = joi.object({
     .min(1)
     .required(),
 });
-
+const passwordSchema = joi
+  .string()
+  .min(8)
+  .pattern(
+    new RegExp(
+      "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$"
+    )
+  ) // At least one lowercase letter, one uppercase letter, one digit, and one special character
+  .required();
 async function RegisterAdminUser(req, res, next) {
   const {
     full_name,
@@ -53,9 +62,6 @@ async function RegisterAdminUser(req, res, next) {
     gender,
   } = req.body;
   const images = req.files;
-
-  // for (const file of images) {
-  //   const { filename, mimetype, size } = file;}
   const { error } = registerValidator.validate({
     full_name,
     email,
@@ -72,9 +78,7 @@ async function RegisterAdminUser(req, res, next) {
     console.log("Having error...");
     return res.status(400).json({ error: error.details[0].message });
   }
-
   const uploader = async (path) => await cloudinary.uploads(path, "Images");
-
   try {
     if (req.method === "POST") {
       const urls = [];
@@ -145,10 +149,16 @@ async function LoginAdminUser(req, res, next) {
     console.log(validPassword);
     return res.status(403).send({ auth: false, token: null });
   }
-  // console.log(account.enable2fa);
-  // if (!account.enable2fa) {
-  //   return res.send({ msg: "please enable 2fa first" });
-  // }
+  if (!account.enable2fa) {
+    return res.send({ msg: "please enable 2fa first" });
+  }
+  const { error } = passwordSchema.validate(validPassword);
+  if (error) {
+    return res.status(400).json({
+      error: error.details[0].message,
+      message: "Update your default password",
+    });
+  }
   const role = await Role.findOne({ _id: account.role_id });
   if (!role) {
     return res.status(403).json({ ErrorMessage: "Role not found" });
@@ -247,7 +257,6 @@ async function Verify2FA(req, res, next) {
     },
   });
 }
-
 async function ForgotPassword(req, res, next) {
   const { email } = req.body;
   const user = await Employee.findOne({ email: email });
@@ -273,7 +282,6 @@ async function ForgotPassword(req, res, next) {
     }
   }
 }
-
 async function ResetPassword(req, res, next) {
   const { id, token } = req.params;
   const { password } = req.body;
