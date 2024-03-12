@@ -73,12 +73,19 @@ async function RegisterAdminUser(req, res, next) {
     gender,
     images,
   });
-
   if (error) {
     console.log("Having error...");
-    return res.status(400).json({ error: error.details[0].message });
+    console.log(error);
+    return res.status(400).json({ message: error.details[0].message });
   }
-  const uploader = async (path) => await cloudinary.uploads(path, "Images");
+  const uploader = async (path) => {
+    try {
+      return await cloudinary.uploads(path, "Images");
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      throw new Error("File upload failed");
+    }
+  };
   try {
     if (req.method === "POST") {
       const urls = [];
@@ -113,10 +120,6 @@ async function RegisterAdminUser(req, res, next) {
           gender,
           images: urls,
         });
-        res.status(201).json({
-          message: "Employee account created successfully",
-          value: { employeeInfo },
-        });
         const token = await generateToken({ id: employee._id });
         if (!token) return next({ status: 500 });
         res.cookie("jwt", token, {
@@ -124,6 +127,18 @@ async function RegisterAdminUser(req, res, next) {
           secure: false,
           maxAge: 7 * 24 * 60 * 60 * 1000,
         });
+        res.status(201).json({
+          message: "Employee account created successfully",
+          value: { employeeInfo },
+        });
+        const recipients = ["manager", "hradmin"];
+        for (const recipient of recipients) {
+          const notification = new Notification({
+            recipient: recipient,
+            message: `New Employee has been created ${employee.full_name}`,
+          });
+          await notification.save();
+        }
       }
     } else {
       return res.status(405).json({
@@ -132,7 +147,7 @@ async function RegisterAdminUser(req, res, next) {
     }
   } catch (error) {
     console.error("Error creating employee account:", error);
-    res.status(500).json({ error: error });
+    res.status(500).json({ message: error });
   }
 }
 async function LoginAdminUser(req, res, next) {
@@ -149,19 +164,19 @@ async function LoginAdminUser(req, res, next) {
     console.log(validPassword);
     return res.status(403).send({ auth: false, token: null });
   }
-  if (!account.enable2fa) {
-    return res.send({ msg: "please enable 2fa first" });
-  }
-  const { error } = passwordSchema.validate(validPassword);
-  if (error) {
-    return res.status(400).json({
-      error: error.details[0].message,
-      message: "Update your default password",
-    });
-  }
+  // if (!account.enable2fa) {
+  //   return res.send({ message: "please enable 2fa first" });
+  // }
+  // const { error } = passwordSchema.validate(validPassword);
+  // if (error) {
+  //   return res.status(400).json({
+  //     error: error.details[0].message,
+  //     message: "Update your default password",
+  //   });
+  // }
   const role = await Role.findOne({ _id: account.role_id });
   if (!role) {
-    return res.status(403).json({ ErrorMessage: "Role not found" });
+    return res.status(403).json({ message: "Role not found" });
   }
   try {
     const accountId = account._id;

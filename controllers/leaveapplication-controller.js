@@ -1,4 +1,5 @@
 const LeaveApplication = require("../models/leaveApplication");
+const Notification = require("../models/notification");
 async function createLeaveApplication(req, res) {
   try {
     const { full_name, duration, leave_date, detail } = req.body;
@@ -13,6 +14,11 @@ async function createLeaveApplication(req, res) {
     });
     await leaveApplication.save();
     res.status(201).json({ message: "Leave application created successfully" });
+    const notification = new Notification({
+      recipient: "hradmin",
+      message: `${leaveApplication.full_name} has been submitted Leave application  `,
+    });
+    await notification.save();
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal server error" });
@@ -46,7 +52,6 @@ async function updateLeaveApplication(req, res) {
   try {
     const { id } = req.params; //leaveappliction
     const { full_name, duration, leave_date, detail } = req.body;
-
     const updatedApplication = await LeaveApplication.findByIdAndUpdate(id, {
       full_name: full_name,
       duration: duration,
@@ -57,6 +62,11 @@ async function updateLeaveApplication(req, res) {
       return res.status(404).json({ message: "Leave application not found" });
     }
     res.status(200).json({ message: "Leave application updated successfully" });
+    const notification = new Notification({
+      recipient: "hradmin",
+      message: `${updatedApplication.full_name} has updated his/her Leave application  `,
+    });
+    await notification.save();
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal server error" });
@@ -72,7 +82,11 @@ async function updateStatus(req, res) {
     }
     leaveApplication.status = status;
     await leaveApplication.save();
-
+    const notification = new Notification({
+      recipient: "employeee",
+      message: `Your appliction has been ${leaveApplication.status}  `,
+    });
+    await notification.save();
     return res.status(200).json(leaveApplication);
   } catch (error) {
     console.log(error);
