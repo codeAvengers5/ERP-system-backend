@@ -335,6 +335,15 @@ async function UpdatePassword(req, res, next) {
     res.status(500).json({ error: "Internal server error" });
   }
 }
+async function LogoutAdminUser(req, res, next) {
+  try {
+    res.clearCookie("jwt");
+    res.status(200).json({ message: "Logged Out" });
+  } catch (error) {
+    console.log("Logout failed with error: ", error);
+    return res.status(500).json({ Error: error });
+  }
+}
 module.exports = {
   RegisterAdminUser,
   LoginAdminUser,
@@ -343,4 +352,5 @@ module.exports = {
   UpdatePassword,
   Enable2FA,
   Verify2FA,
+  LogoutAdminUser,
 };
