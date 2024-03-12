@@ -35,7 +35,7 @@ async function RegisterSiteUser(req, res, next) {
     const errorDetails = validation.error.details
       .map((d) => d.message)
       .join("<br>");
-    res.send(`<h2>Vaildation Error: </h2>${errorDetails}`);
+    res.send(`<h2>Validation Error: </h2>${errorDetails}`);
     return;
   }
   const siteUser = new User({
@@ -45,31 +45,28 @@ async function RegisterSiteUser(req, res, next) {
   });
   try {
     const userExist = await User.findOne({ email: email });
-    if (userExist) throw "Email already exist";
-    else {
-      const confirmationCode = generateConfirmationCode();
-      siteUser.confirmationCode = confirmationCode;
-      await siteUser.save();
-      // Send confirmation email
-      await sendConfirmationEmail(
-        siteUser.email,
-        confirmationCode,
-        siteUser.username
-      );
-      if (!siteUser) return res.status(500).json(error.details[0].message);
-      const token = await generateToken({ id: siteUser._id });
-      if (!token) return next({ status: 500 });
-      res.cookie("jwt", token, {
-        httpOnly: true,
-        secure: false,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
-      res.status(201).json({
-        success: true,
-        siteUser,
-        message: "Please confirm/verify your email.",
-      });
-    }
+    if (userExist) throw "Email already exists";
+    const confirmationCode = generateConfirmationCode();
+    siteUser.confirmationCode = confirmationCode;
+    await siteUser.save();
+    // Send confirmation email
+    await sendConfirmationEmail(
+      siteUser.email,
+      confirmationCode,
+      siteUser.username
+    );
+    const token = await generateToken({ id: siteUser._id });
+    if (!token) return next({ status: 500 });
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      secure: false,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    res.status(201).json({
+      success: true,
+      siteUser,
+      message: "Please confirm/verify your email.",
+    });
     console.log("Success", token);
   } catch (error) {
     return res.status(500).json(error);
@@ -104,10 +101,10 @@ async function LoginSiteUser(req, res, next) {
       .json({ Error: "Email and Password can not be Empty" });
   const account = await User.findOne({ email: email });
   if (!account)
-    return res.status(400).json({ Error: "Invalid Email or Password" });
+    return res.status(400).json({ message: "Invalid Email or Password" });
   const validPassword = bcrypt.compareSync(password, account.password);
   if (!validPassword) {
-    return res.status(403).send({ auth: false, token: null });
+    return res.status(403).json({ message: "Invalid Email or Password" });
   }
   try {
     const token = await generateToken({ id: account._id });
@@ -122,7 +119,7 @@ async function LoginSiteUser(req, res, next) {
       cookieOptions.maxAge = 7 * 24 * 60 * 60 * 1000;
     }
     req.session.userId = account._id;
-    console.log(req.session);
+    // console.log(req.session);
     res.cookie("jwt", token, cookieOptions);
     res.status(200).json({ token: token, msg: "LoggedIn" });
   } catch (error) {
@@ -159,7 +156,6 @@ async function ForgotPassword(req, res, next) {
 async function ResetPassword(req, res, next) {
   const { id, token } = req.params;
   const { password } = req.body;
-
   let hashedpassword = await bcrypt.hash(password, 10);
   jwt.verify(token, process.env.JWT_TOKEN_KEY, async (err, decoded) => {
     if (err) {
@@ -174,12 +170,14 @@ async function ResetPassword(req, res, next) {
         if (!updatedEmployee) {
           return next(new Error("Employee not found"));
         }
-        res.status(200).json({ mgs: "Password has been reset successfully" });
+        res
+          .status(200)
+          .json({ message: "Password has been reset successfully" });
 
         console.log("Password has been reset successfully");
       } catch (error) {
-        console.error("Error resetting password:", error);
-        res.status(500).json({ message: error });
+        // console.error("Error resetting password:", error);
+        res.status(500).json({ error: "Internal server error" });
       }
     }
   });
@@ -192,7 +190,7 @@ async function UpdatePassword(req, res, next) {
     const user = await User.findById(id);
 
     if (!user) {
-      return next(new Error("Employee not found"));
+      return res.status(404).json({ error: "User not found" });
     }
     const isPasswordMatch = bcrypt.compareSync(oldPassword, user.password);
     if (!isPasswordMatch) {
@@ -206,7 +204,6 @@ async function UpdatePassword(req, res, next) {
       .status(200)
       .json({ success: true, message: "Password updated successfully" });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: "Internal server error" });
   }
 }

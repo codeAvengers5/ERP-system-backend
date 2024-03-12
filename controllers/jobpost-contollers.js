@@ -19,7 +19,7 @@ const createJobPost = async (req, res) => {
       salary,
     });
     if (error) {
-      console.log("Having error...");
+      // console.log("Having error...");
       return res.status(400).json({ error: error.details[0].message });
     }
     
@@ -37,7 +37,7 @@ const createJobPost = async (req, res) => {
 
     res.status(201).json({ message: 'Job post created successfully', jobPost });
   } catch (error) {
-    console.error(error);
+    // console.error(error);
     res.status(500).json({ error: 'Failed to create job post' });
   }
 };

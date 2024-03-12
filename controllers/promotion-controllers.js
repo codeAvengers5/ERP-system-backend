@@ -32,7 +32,7 @@ async function createPromotion(req, res) {
   });
   const hrAdminId = req.user.id;
   if (error) {
-    console.log("Having error...");
+    // console.log("Having error...");
     return res.status(400).json({ error: error.details[0].message });
   }
   try {
@@ -63,8 +63,8 @@ async function createPromotion(req, res) {
       });
     }
   } catch (error) {
-    console.error("Error creating promotion:", error);
-    res.status(500).json({ error: error });
+    // console.error("Error creating promotion:", error);
+    res.status(500).json({ error: "Database connection failed" });
   }
 }
 async function getAllPromotions(req, res) {
