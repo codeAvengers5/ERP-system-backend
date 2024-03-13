@@ -40,7 +40,15 @@ const registerValidator = joi.object({
     .min(1)
     .required(),
 });
-
+const passwordSchema = joi
+  .string()
+  .min(8)
+  .pattern(
+    new RegExp(
+      "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$"
+    )
+  ) // At least one lowercase letter, one uppercase letter, one digit, and one special character
+  .required();
 async function RegisterAdminUser(req, res, next) {
   const {
     full_name,
@@ -145,10 +153,17 @@ async function LoginAdminUser(req, res, next) {
     console.log(validPassword);
     return res.status(403).send({ auth: false, token: null });
   }
-  // console.log(account.enable2fa);
-  // if (!account.enable2fa) {
-  //   return res.send({ msg: "please enable 2fa first" });
-  // }
+  if (!account.enable2fa) {
+    return res.send({ message: "please enable 2fa first" });
+  }
+  const { error } = passwordSchema.validate(validPassword);
+  if (error) {
+    return res.status(400).json({
+      error: error.details[0].message,
+      message: "Update your default password",
+    });
+  }
+  const accountInfo = await EmployeeInfo.find({ email: email });
   const role = await Role.findOne({ _id: account.role_id });
   if (!role) {
     return res.status(403).json({ ErrorMessage: "Role not found" });
@@ -156,10 +171,13 @@ async function LoginAdminUser(req, res, next) {
   try {
     const accountId = account._id;
     const roleName = role.role_name;
+    const fullName = account.full_name;
+    const profile_pic = accountInfo.image_profile;
     const payload = {
       id: accountId,
       role: roleName,
     };
+    const userInfo = { accountId, roleName, fullName, profile_pic };
     const token = await generateToken(payload);
     res.cookie("jwt", token, {
       httpOnly: true,
@@ -167,7 +185,9 @@ async function LoginAdminUser(req, res, next) {
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    res.status(200).json({ token: token, Msg: "LoggedIn" });
+    res
+      .status(200)
+      .json({ token: token, userInfo: userInfo, message: "LoggedIn" });
   } catch (error) {
     console.log("Login failed with error : ", error);
     return res.status(500).json({ Error: error });

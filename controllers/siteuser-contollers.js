@@ -196,7 +196,7 @@ async function UpdatePassword(req, res, next) {
     if (!isPasswordMatch) {
       return res.status(400).json({ error: "Old password is incorrect" });
     }
-    let hashedNewpassword = await bcrypt.hash(password, 10);
+    let hashedNewpassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedNewpassword;
     await user.save();
 
