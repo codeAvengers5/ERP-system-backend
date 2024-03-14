@@ -12,9 +12,9 @@ const generateToken = require("../middleware/generateToken");
 const crypto = require("crypto");
 const { encode } = require("hi-base32");
 const OTPAuth = require("otpauth");
+const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
 const { sendRestPasswordLink } = require("../helpers/sendConfirmationEmail");
-const Notification = require("../models/notification");
 const registerValidator = joi.object({
   full_name: joi.string().required(),
   email: joi.string().email().required(),
@@ -132,7 +132,7 @@ async function RegisterAdminUser(req, res, next) {
     }
   } catch (error) {
     console.error("Error creating employee account:", error);
-    res.status(500).json({ error: error });
+    return res.status(500).json({ error: error });
   }
 }
 async function LoginAdminUser(req, res, next) {
@@ -149,16 +149,8 @@ async function LoginAdminUser(req, res, next) {
     console.log(validPassword);
     return res.status(403).send({ auth: false, token: null });
   }
-  if (!account.enable2fa) {
-    return res.send({ msg: "please enable 2fa first" });
-  }
-  const { error } = passwordSchema.validate(validPassword);
-  if (error) {
-    return res.status(400).json({
-      error: error.details[0].message,
-      message: "Update your default password",
-    });
-  }
+
+  
   const role = await Role.findOne({ _id: account.role_id });
   if (!role) {
     return res.status(403).json({ ErrorMessage: "Role not found" });
@@ -166,10 +158,13 @@ async function LoginAdminUser(req, res, next) {
   try {
     const accountId = account._id;
     const roleName = role.role_name;
+    const enable2fa = account.enable2fa;
+    // const
     const payload = {
       id: accountId,
       role: roleName,
     };
+    const userInfo = { accountId, roleName, enable2fa };
     const token = await generateToken(payload);
     res.cookie("jwt", token, {
       httpOnly: true,
@@ -177,85 +172,77 @@ async function LoginAdminUser(req, res, next) {
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    res.status(200).json({ token: token, Msg: "LoggedIn" });
+    res.status(200).json({ token: token, userInfo: userInfo, Msg: "LoggedIn" });
   } catch (error) {
     console.log("Login failed with error : ", error);
     return res.status(500).json({ Error: error });
   }
 }
 async function Enable2FA(req, res) {
+  const secret = speakeasy.generateSecret();
   const { id } = req.params;
-
-  if (!(await Employee.findOne({ _id: id }))) {
-    return res.status(404).json({
-      status: "fail",
-      message: "User does not exist",
+  const user = await Employee.findByIdAndUpdate(id, {
+    secrets2fa: secret.base32,
+    enable2fa: true,
+  }).exec();
+  if (!user) {
+    return res.status(400).json({ message: "User can not found" });
+  } else {
+    QRCode.toDataURL(secret.otpauth_url, (err, image_data) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Internal Server Error");
+      }
+      req.qr = image_data;
+      res.json({
+        status: "success",
+        data: {
+          qrCodeUrl: req.qr,
+          secret: secret,
+        },
+      });
     });
   }
-  const base32_secret = generateBase32Secret();
-  await Employee.updateOne({ _id: id }, { secrets2fa: base32_secret });
-  const totp = new OTPAuth.TOTP({
-    issuer: "codeavengers.com",
-    label: "codeavengers",
-    algorithm: "SHA1",
-    digits: 6,
-    secret: base32_secret,
-  });
-  const otpauth_url = totp.toString();
-  QRCode.toDataURL(otpauth_url, (err, qrUrl) => {
-    if (err) {
-      return res.status(500).json({
+}
+async function Verify2FA(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { token } = req.body;
+    const user = await Employee.findOne({ _id: id });
+
+    if (!user) {
+      return res.status(404).json({
         status: "fail",
-        message: "Error while generating QR Code",
+        message: "User does not exist",
       });
     }
-
+    if (!user.enable2fa) {
+      await Employee.updateOne({ _id: id }, { enable2fa: true });
+    }
+    const userSecret = user.secrets2fa;
+    const otpResult = speakeasy.totp.verify({
+      secret: userSecret,
+      encoding: "base32",
+      token: token,
+      window: 1,
+    });
+    if (!otpResult) {
+      return res.status(422).json({ message: "Invalid Code" });
+    }
     res.json({
       status: "success",
       data: {
-        qrCodeUrl: qrUrl,
-        secret: base32_secret,
+        otp_valid: true,
       },
     });
-  });
-}
-async function Verify2FA(req, res, next) {
-  const { id, token } = req.params;
-  const user = await Employee.findOne({ _id: id });
-  if (!user) {
-    return res.status(404).json({
-      status: "fail",
-      message: "User does not exist",
+  } catch (error) {
+    console.error("An error occurred during 2FA verification:", error);
+    res.status(500).json({
+      status: "error",
+      message:
+        "An error occurred during 2FA verification. Please try again later.",
     });
   }
-  // verify the token
-  const totp = new OTPAuth.TOTP({
-    issuer: "codeninjainsights.com",
-    label: "codeninjainsights",
-    algorithm: "SHA1",
-    digits: 6,
-    secret: user.secrets2fa,
-  });
-  const delta = totp.validate({ token });
-
-  if (delta === null) {
-    return res.status(401).json({
-      status: "fail",
-      message: "Authentication failed",
-    });
-  }
-
-  // update the  user status
-  if (!user.enable2fa) {
-    await Employee.updateOne({ _id: id }, { enable2fa: true });
-  }
-
-  res.json({
-    status: "success",
-    data: {
-      otp_valid: true,
-    },
-  });
 }
 async function ForgotPassword(req, res, next) {
   const { email } = req.body;
