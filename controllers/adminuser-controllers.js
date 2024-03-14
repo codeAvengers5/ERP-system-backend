@@ -147,22 +147,23 @@ async function LoginAdminUser(req, res, next) {
       .json({ Error: "Email and Password can not be Empty" });
   const account = await Employee.findOne({ email: email });
   if (!account)
-    return res.status(400).json({ Error: "Invalid Email or Password" });
+    return res.status(400).json({ message: "Invalid Email or Password" });
   const validPassword = bcrypt.compareSync(password, account.password);
   if (!validPassword) {
     console.log(validPassword);
-    return res.status(403).send({ auth: false, token: null });
+    return res.status(403).json({ message: "Invalid Email or Password" });
   }
-  if (!account.enable2fa) {
-    return res.send({ message: "please enable 2fa first" });
-  }
-  const { error } = passwordSchema.validate(validPassword);
-  if (error) {
-    return res.status(400).json({
-      error: error.details[0].message,
-      message: "Update your default password",
-    });
-  }
+  // if (!account.enable2fa) {
+  //   return res.status(400).json({ message: "please enable 2fa first" });
+  // }
+  // // const { error } = passwordSchema.validate(validPassword);
+  // if (error) {
+  //   console.log(error);
+  //   return res.status(400).json({
+  //     error: error.details[0].message,
+  //     message: "Update your default password",
+  //   });
+  // }
   const accountInfo = await EmployeeInfo.find({ email: email });
   const role = await Role.findOne({ _id: account.role_id });
   if (!role) {
@@ -170,6 +171,7 @@ async function LoginAdminUser(req, res, next) {
   }
   try {
     const accountId = account._id;
+    const enable2fa = account.enable2fa;
     const roleName = role.role_name;
     const fullName = account.full_name;
     const profile_pic = accountInfo.image_profile;
@@ -177,7 +179,7 @@ async function LoginAdminUser(req, res, next) {
       id: accountId,
       role: roleName,
     };
-    const userInfo = { accountId, roleName, fullName, profile_pic };
+    const userInfo = { accountId, roleName, fullName, profile_pic, enable2fa };
     const token = await generateToken(payload);
     res.cookie("jwt", token, {
       httpOnly: true,
@@ -230,42 +232,56 @@ async function Enable2FA(req, res) {
   });
 }
 async function Verify2FA(req, res, next) {
-  const { id, token } = req.params;
-  const user = await Employee.findOne({ _id: id });
-  if (!user) {
-    return res.status(404).json({
-      status: "fail",
-      message: "User does not exist",
+  try {
+    const { id } = req.params;
+    const { token } = req.body;
+    const user = await Employee.findOne({ _id: id });
+
+    if (!user) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'User does not exist',
+      });
+    }
+
+    // Verify the token
+    const totp = new OTPAuth.TOTP({
+      issuer: 'codeninjainsights.com',
+      label: 'codeninjainsights',
+      algorithm: 'SHA1',
+      digits: 6,
+      secret: user.secrets2fa,
+      window: 1
+      // validWindow: 1, // Allow tokens within 1 time step (30 seconds by default)
+    });
+
+    const delta = totp.validate({ token });
+    console.log(delta);
+    if (delta === null) {
+      return res.status(401).json({
+        status: 'fail',
+        message: 'Authentication failed',
+      });
+    }
+
+    // Update the user status
+    if (!user.enable2fa) {
+      await Employee.updateOne({ _id: id }, { enable2fa: true });
+    }
+
+    res.json({
+      status: 'success',
+      data: {
+        otp_valid: true,
+      },
+    });
+  } catch (error) {
+    console.error('An error occurred during 2FA verification:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'An error occurred during 2FA verification. Please try again later.',
     });
   }
-  // verify the token
-  const totp = new OTPAuth.TOTP({
-    issuer: "codeninjainsights.com",
-    label: "codeninjainsights",
-    algorithm: "SHA1",
-    digits: 6,
-    secret: user.secrets2fa,
-  });
-  const delta = totp.validate({ token });
-
-  if (delta === null) {
-    return res.status(401).json({
-      status: "fail",
-      message: "Authentication failed",
-    });
-  }
-
-  // update the  user status
-  if (!user.enable2fa) {
-    await Employee.updateOne({ _id: id }, { enable2fa: true });
-  }
-
-  res.json({
-    status: "success",
-    data: {
-      otp_valid: true,
-    },
-  });
 }
 
 async function ForgotPassword(req, res, next) {
