@@ -13,18 +13,8 @@ const { isAuthenticated, isHRAdmin } = require("../middleware/auth");
 router.post("/createJobPosts", isAuthenticated, isHRAdmin, createJobPost);
 router.get("/getJobPosts", isAuthenticated, isHRAdmin, getAllJobPosts);
 router.get("/getJobPostsId/:id", isAuthenticated, isHRAdmin, getJobPostById);
-router.put(
-  "/updateJobPosts/:id",
-  isAuthenticated,
-  isHRAdmin,
-  updateJobPostById
-);
-router.delete(
-  "/deleteJobPosts/:id",
-  isAuthenticated,
-  isHRAdmin,
-  deleteJobPostById
-);
+router.put("/updateJobPosts/:id",isAuthenticated,isHRAdmin,updateJobPostById);
+router.delete("/deleteJobPosts/:id",isAuthenticated,isHRAdmin,deleteJobPostById);
 router.get("/joblist", ViewJob);
 router.post("/jobapply/:id", uploadCV.single("cv"), JobApply);
 router.get("/jobsummary", isAuthenticated, isHRAdmin, ViewJobSummary);

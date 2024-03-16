@@ -21,13 +21,26 @@ const jobPostSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  employee_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Employee',
+  status: {
+    type: Boolean,
+    default: true,
+  },
+  openingDate: {
+    type: Date,
+    required: true,
+  },
+  closingDate: {
+    type: Date,
     required: true,
   },
 });
-
+jobPostSchema.pre('save', function (next) {
+  const currentDate = new Date();
+  if (currentDate < this.openingDate || currentDate > this.closingDate) {
+    this.status = false; // Close the job post if the current date is before the opening date or after the closing date
+  }
+  next();
+});
 const JobPost = mongoose.model('JobPost', jobPostSchema);
 
 module.exports = JobPost;
