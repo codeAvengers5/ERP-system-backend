@@ -8,20 +8,18 @@ const jobPostValidator = joi.object({
   requirement: joi.string().required(),
   responsibility: joi.string().required(),
   salary: joi.number().required(),
-  openingDate: joi.date().required(),
   closingDate: joi.date().required(),
 });
 
 const createJobPost = async (req, res) => {
   try {
-    const { title, description, requirement, responsibility, salary, openingDate, closingDate} = req.body;
+    const { title, description, requirement, responsibility, salary,closingDate} = req.body;
     const { error } = jobPostValidator.validate({
       title,
       description,
       requirement,
       responsibility,
       salary,
-      openingDate,
       closingDate,
     });
     if (error) {
@@ -34,7 +32,6 @@ const createJobPost = async (req, res) => {
       requirement,
       responsibility,
       salary,
-      openingDate,
       closingDate,
     });
 
@@ -79,7 +76,7 @@ const getJobPostById = async (req, res) => {
 const updateJobPostById = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, requirement, responsibility, salary, openingDate, closingDate } = req.body;
+    const { title, description, requirement, responsibility, salary, closingDate } = req.body;
 
     const jobPost = await JobPost.findByIdAndUpdate(
       id,
@@ -89,7 +86,6 @@ const updateJobPostById = async (req, res) => {
         requirement,
         responsibility,
         salary,
-        openingDate,
         closingDate,
       },
       { new: true }
