@@ -23,5 +23,5 @@ router.delete("/deleteJobPosts/:id",isAuthenticated,isHRAdmin,deleteJobPostById)
 router.get("/joblist", ViewJob);
 router.post("/jobapply/:id", uploadCV.single("cv"), JobApply);
 router.get("/jobsummary", isAuthenticated, isHRAdmin, ViewJobSummary);
-router.post("/jobstatus", isAuthenticated, isHRAdmin, StatusChange);
+router.post("/jobstatus/:id", isAuthenticated, isHRAdmin, StatusChange);
 module.exports = router;
