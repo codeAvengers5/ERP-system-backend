@@ -143,23 +143,20 @@ async function LoginAdminUser(req, res, next) {
       .json({ Error: "Email and Password can not be Empty" });
   const account = await Employee.findOne({ email: email });
   if (!account)
-    return res.status(400).json({ Error: "Invalid Email or Password" });
+    return res.status(400).json({ message: "Invalid Email or Password" });
   const validPassword = bcrypt.compareSync(password, account.password);
   if (!validPassword) {
-    console.log(validPassword);
-    return res.status(403).send({ auth: false, token: null });
+    return res.status(403).send({ message: "Invalid Email or Password" });
   }
 
-  
   const role = await Role.findOne({ _id: account.role_id });
   if (!role) {
-    return res.status(403).json({ ErrorMessage: "Role not found" });
+    return res.status(403).json({ message: "Role not found" });
   }
   try {
     const accountId = account._id;
     const roleName = role.role_name;
     const enable2fa = account.enable2fa;
-    // const
     const payload = {
       id: accountId,
       role: roleName,
@@ -172,7 +169,7 @@ async function LoginAdminUser(req, res, next) {
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    res.status(200).json({ token: token, userInfo: userInfo, Msg: "LoggedIn" });
+    res.status(200).json({ token: token, userInfo: userInfo, message: "LoggedIn" });
   } catch (error) {
     console.log("Login failed with error : ", error);
     return res.status(500).json({ Error: error });
@@ -287,8 +284,7 @@ async function ResetPassword(req, res, next) {
         if (!updatedEmployee) {
           return next(new Error("Employee not found"));
         }
-        // res.json("success", updatedEmployee)
-        console.log("Password has been reset successfully");
+        return res.json("success", updatedEmployee);
       } catch (error) {
         console.error("Error resetting password:", error);
         res.status(500).json({ message: error });

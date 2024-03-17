@@ -42,7 +42,7 @@ async function JobApply(req, res) {
   const { id } = req.params;
   const { full_name, email, phone_no } = req.body;
   const cv = req.file;
-  const userId = req.session.userId;
+  const userId = req.user.id;
   if (!userId) {
     return res.status(403).json({ message: "you should be logged in first" });
   }
@@ -78,9 +78,8 @@ async function JobApply(req, res) {
     cloudinary.uploader.upload(
       path,
       { resource_type: "raw" },
-      function (err, result) {
+      async function (err, result) {
         if (err) {
-          // Handle the upload error
           console.error(err);
           return res.send(
             "File format is wrong! Only pdf files are supported."
@@ -90,18 +89,24 @@ async function JobApply(req, res) {
         const cvUrl = result.url;
         console.log(result);
         const appliedUser = new JobSummary({
-          job_id: "65d8deb6432f60d7d0719971",
+          job_id: id,
           full_name,
           email,
           phone_no,
           cv: cvUrl,
           user_id: userId,
+          status: "pending",
         });
         appliedUser.save();
         res.status(201).json({
           message: "You have Successfully applied to the job application",
           value: { appliedUser },
         });
+        const notification = new Notification({
+          recipient: "hradmin",
+          message: `${appliedUser.full_name} has been applied to job application  `,
+        });
+        await notification.save();
       }
     );
   } catch (error) {
@@ -118,8 +123,37 @@ async function ViewJobSummary(req, res) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
+async function StatusChange(req, res) {
+  try {
+    const { id } = req.params; //job id
+    const { status } = req.body;
+    const jobSummary = await JobSummary.findById(id);
+    if (!jobSummary) {
+      return res.status(404).json({ message: "Leave application not found" });
+    }
+    jobSummary.status = status;
+
+    if (status === "rejected") {
+      const twentyFourHours = 24 * 60 * 60 * 1000;
+      const currentTime = new Date().getTime();
+      const timeSinceCreation = currentTime - jobSummary.createdAt.getTime();
+
+      if (timeSinceCreation <= twentyFourHours) {
+        await JobSummary.findByIdAndDelete(id);
+        return res.status(200).json({ message: "Job summary deleted" });
+      }
+    }
+
+    await jobSummary.save();
+    return res.status(200).json(jobSummary);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
 module.exports = {
   ViewJob,
   JobApply,
   ViewJobSummary,
+  StatusChange,
 };
