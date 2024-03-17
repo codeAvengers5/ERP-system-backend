@@ -1,36 +1,38 @@
 const JobPost = require("../models/jobPost");
 const joi = require("@hapi/joi");
+
 // Create a new job post
 const jobPostValidator = joi.object({
   title: joi.string().required(),
   description: joi.string().required(),
   requirement: joi.string().required(),
   responsibility: joi.string().required(),
-  salary:joi.number().required(),
+  salary: joi.number().required(),
+  closingDate: joi.date().required(),
 });
+
 const createJobPost = async (req, res) => {
   try {
-    const { title, description, requirement, responsibility, salary} = req.body;
+    const { title, description, requirement, responsibility, salary,closingDate} = req.body;
     const { error } = jobPostValidator.validate({
       title,
       description,
       requirement,
       responsibility,
       salary,
+      closingDate,
     });
     if (error) {
       console.log("Having error...");
       return res.status(400).json({ error: error.details[0].message });
     }
-    
-    const hrAdminId = req.user.id;
     const jobPost = new JobPost({
       title,
       description,
       requirement,
       responsibility,
       salary,
-      employee_id:hrAdminId,
+      closingDate,
     });
 
     await jobPost.save();
@@ -74,7 +76,7 @@ const getJobPostById = async (req, res) => {
 const updateJobPostById = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, requirement, responsibility, salary} = req.body;
+    const { title, description, requirement, responsibility, salary, closingDate } = req.body;
 
     const jobPost = await JobPost.findByIdAndUpdate(
       id,
@@ -84,7 +86,7 @@ const updateJobPostById = async (req, res) => {
         requirement,
         responsibility,
         salary,
-        
+        closingDate,
       },
       { new: true }
     );
