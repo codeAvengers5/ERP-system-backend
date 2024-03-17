@@ -1,5 +1,7 @@
 const JobPost = require("../models/jobPost");
 const joi = require("@hapi/joi");
+
+// Create a new job post
 const jobPostValidator = joi.object({
   title: joi.string().required(),
   description: joi.string().required(),
@@ -7,12 +9,18 @@ const jobPostValidator = joi.object({
   responsibility: joi.string().required(),
   salary: joi.number().required(),
   closingDate: joi.date().required(),
+});
 
 const createJobPost = async (req, res) => {
   try {
-    const { title, description, requirement, responsibility, salary } =
-      req.body;
-    const { title, description, requirement, responsibility, salary,closingDate} = req.body;
+    const {
+      title,
+      description,
+      requirement,
+      responsibility,
+      salary,
+      closingDate,
+    } = req.body;
     const { error } = jobPostValidator.validate({
       title,
       description,
@@ -22,6 +30,7 @@ const createJobPost = async (req, res) => {
       closingDate,
     });
     if (error) {
+      console.log("Having error...");
       return res.status(400).json({ error: error.details[0].message });
     }
     const jobPost = new JobPost({
@@ -32,13 +41,17 @@ const createJobPost = async (req, res) => {
       salary,
       closingDate,
     });
+
     await jobPost.save();
+
     res.status(201).json({ message: "Job post created successfully", jobPost });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to create job post" });
   }
 };
+
+// Get all job posts
 const getAllJobPosts = async (req, res) => {
   try {
     const jobPosts = await JobPost.find();
@@ -48,6 +61,8 @@ const getAllJobPosts = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch job posts" });
   }
 };
+
+// Get a specific job post by ID
 const getJobPostById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -63,12 +78,20 @@ const getJobPostById = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch job post" });
   }
 };
+
+// Update a job post by ID
 const updateJobPostById = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, requirement, responsibility, salary } =
-      req.body;
-    const { title, description, requirement, responsibility, salary, closingDate } = req.body;
+    const {
+      title,
+      description,
+      requirement,
+      responsibility,
+      salary,
+      closingDate,
+    } = req.body;
+
     const jobPost = await JobPost.findByIdAndUpdate(
       id,
       {
@@ -91,6 +114,8 @@ const updateJobPostById = async (req, res) => {
     res.status(500).json({ error: "Failed to update job post" });
   }
 };
+
+// Delete a job post by ID
 const deleteJobPostById = async (req, res) => {
   try {
     const { id } = req.params;
