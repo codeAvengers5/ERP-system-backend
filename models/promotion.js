@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const promotionSchema = new mongoose.Schema({
   title: {
@@ -13,13 +13,8 @@ const promotionSchema = new mongoose.Schema({
     type: Array,
     required: true,
   },
-  employee_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Employee',
-    required: true,
-  },
 });
 
-const Promotion = mongoose.model('Promotion', promotionSchema);
+const Promotion = mongoose.model("Promotion", promotionSchema);
 
 module.exports = Promotion;

@@ -124,7 +124,7 @@ async function LoginSiteUser(req, res, next) {
     req.session.userId = account._id;
     console.log(req.session);
     res.cookie("jwt", token, cookieOptions);
-    res.status(200).json({ token: token, msg: "LoggedIn" });
+    res.status(200).json({ token: token, message: "LoggedIn" });
   } catch (error) {
     console.log("Login failed with error : ", error);
     return res.status(500).json({ Error: error });

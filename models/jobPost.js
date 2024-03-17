@@ -21,11 +21,6 @@ const jobPostSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  employee_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Employee',
-    required: true,
-  },
 });
 
 const JobPost = mongoose.model('JobPost', jobPostSchema);

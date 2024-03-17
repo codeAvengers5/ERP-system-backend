@@ -30,7 +30,6 @@ async function createPromotion(req, res) {
     description,
     images,
   });
-  const hrAdminId = req.user.id;
   if (error) {
     console.log("Having error...");
     return res.status(400).json({ error: error.details[0].message });
@@ -50,7 +49,6 @@ async function createPromotion(req, res) {
         title,
         description,
         images: urls,
-        employee_id: hrAdminId,
       });
       await promotion.save();
 
@@ -99,7 +97,6 @@ async function updatePromotionById(req, res) {
     images,
   });
   if (error) {
-    console.log("Having error...");
     return res.status(400).json({ error: error.details[0].message });
   }
   try {

@@ -7,7 +7,12 @@ const {
   deleteJobPostById,
 } = require("../controllers/jobpost-contollers");
 const router = express.Router();
-const {ViewJob, JobApply,ViewJobSummary} = require("../controllers/jobapply-contollers");
+const {
+  ViewJob,
+  JobApply,
+  ViewJobSummary,
+  StatusChange,
+} = require("../controllers/jobapply-contollers");
 const { uploadCV } = require("../config/multer");
 const { isAuthenticated, isHRAdmin } = require("../middleware/auth");
 router.post("/createJobPosts", isAuthenticated, isHRAdmin, createJobPost);
@@ -28,4 +33,5 @@ router.delete(
 router.get("/joblist", ViewJob);
 router.post("/jobapply/:id", uploadCV.single("cv"), JobApply);
 router.get("/jobsummary", isAuthenticated, isHRAdmin, ViewJobSummary);
+router.post("/jobstatus", isAuthenticated, isHRAdmin, StatusChange);
 module.exports = router;

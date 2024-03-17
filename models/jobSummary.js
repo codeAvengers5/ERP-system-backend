@@ -27,6 +27,11 @@ const jobSummarySchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
+  status: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+  },
 });
 
 const JobSummary = mongoose.model("JobSummary", jobSummarySchema);
