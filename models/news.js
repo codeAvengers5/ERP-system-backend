@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const newsSchema = new mongoose.Schema({
   title: {
@@ -9,20 +9,18 @@ const newsSchema = new mongoose.Schema({
     type: Boolean,
     required: true,
   },
-  employee_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Employee',
-  },
-  images: [{
-    type: String,
-    required: true,
-  }],
+  images: [
+    {
+      type: String,
+      required: true,
+    },
+  ],
   description: {
     type: String,
     required: true,
   },
 });
 
-const News = mongoose.model('News', newsSchema);
+const News = mongoose.model("News", newsSchema);
 
 module.exports = News;
