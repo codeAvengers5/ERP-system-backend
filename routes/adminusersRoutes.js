@@ -17,7 +17,10 @@ router.get("/itadmin", isAuthenticated, isItAdmin, (req, res) => {
 });
 router.post(
   "/registeradmins",
-  uploadImages.array("images", 10),
+  uploadImages.fields([
+    { name: "images", maxCount: 10 },
+    { name: "image_profile", maxCount: 1 },
+  ]),
   RegisterAdminUser
 );
 router.post("/loginadmin", LoginAdminUser);

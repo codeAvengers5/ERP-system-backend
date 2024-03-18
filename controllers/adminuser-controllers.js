@@ -40,6 +40,22 @@ const registerValidator = joi.object({
     )
     .min(1)
     .required(),
+  image_profile: joi
+    .array()
+    .items(
+      joi.object({
+        fieldname: joi.string().required(),
+        filename: joi.string().required(),
+        path: joi.string().required(),
+        originalname: joi.string().required(),
+        encoding: joi.string().required(),
+        destination: joi.string().required(),
+        mimetype: joi.string().valid("image/jpeg", "image/png").required(),
+        size: joi.number().required(),
+      })
+      // })
+    )
+    .required(),
 });
 const passwordSchema = joi
   .string()
@@ -61,7 +77,8 @@ async function RegisterAdminUser(req, res, next) {
     salary,
     gender,
   } = req.body;
-  const images = req.files;
+  const images = req.files["images"];
+  const image_profile = req.files["image_profile"];
   const { error } = registerValidator.validate({
     full_name,
     email,
@@ -72,21 +89,30 @@ async function RegisterAdminUser(req, res, next) {
     salary,
     gender,
     images,
+    image_profile,
   });
 
   if (error) {
-    console.log("Having error...");
     return res.status(400).json({ error: error.details[0].message });
   }
-  const uploader = async (path) => await cloudinary.uploads(path, "Images");
+  const uploader = async (path) => await cloudinary.uploads(path, "images");
   try {
     if (req.method === "POST") {
       const urls = [];
-      const files = req.files;
-      for (const file of files) {
+      const urls_pic = [];
+      if (req.files["images"]) {
+        for (const file of req.files["images"]) {
+          const { path } = file;
+          const newPath = await uploader(path);
+          urls.push(newPath);
+          fs.unlinkSync(path);
+        }
+      }
+      if (req.files["image_profile"]) {
+        const file = req.files["image_profile"][0];
         const { path } = file;
         const newPath = await uploader(path);
-        urls.push(newPath);
+        urls_pic.push(newPath);
         fs.unlinkSync(path);
       }
       const userExist = await Employee.findOne({ email: email });
@@ -112,10 +138,7 @@ async function RegisterAdminUser(req, res, next) {
           salary,
           gender,
           images: urls,
-        });
-        res.status(201).json({
-          message: "Employee account created successfully",
-          value: { employeeInfo },
+          image_profile: urls_pic,
         });
         const token = await generateToken({ id: employee._id });
         if (!token) return next({ status: 500 });
@@ -123,6 +146,10 @@ async function RegisterAdminUser(req, res, next) {
           httpOnly: true,
           secure: false,
           maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+        res.status(201).json({
+          message: "Employee account created successfully",
+          value: { employeeInfo },
         });
       }
     } else {
@@ -148,7 +175,10 @@ async function LoginAdminUser(req, res, next) {
   if (!validPassword) {
     return res.status(403).send({ message: "Invalid Email or Password" });
   }
-
+  const { error } = passwordSchema.validate(validPassword);
+  if (error) {
+    console.log("Update your password first");
+  }
   const role = await Role.findOne({ _id: account.role_id });
   if (!role) {
     return res.status(403).json({ message: "Role not found" });
@@ -169,7 +199,9 @@ async function LoginAdminUser(req, res, next) {
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    res.status(200).json({ token: token, userInfo: userInfo, message: "LoggedIn" });
+    res
+      .status(200)
+      .json({ token: token, userInfo: userInfo, message: "LoggedIn" });
   } catch (error) {
     console.log("Login failed with error : ", error);
     return res.status(500).json({ Error: error });
