@@ -359,6 +359,43 @@ async function LogoutAdminUser(req, res, next) {
     return res.status(500).json({ Error: error });
   }
 }
+async function GetAllUsers(req, res, next) {
+  try {
+    const employeeInfo = await EmployeeInfo.find({})
+      .populate("employee_id", "employee_id")
+      .exec();
+
+    const employeeData = await Promise.all(
+      employeeInfo.map(async (info) => {
+        const employee = await Employee.findOne({ _id: info.employee_id });
+        if (!employee) {
+          return null;
+        }
+        const roleId = employee.role_id.toString();
+        const role = await Role.findOne({ _id: roleId });
+        if (!role) {
+          return null;
+        }
+        return {
+          name: employee.full_name,
+          email: employee.email,
+          role: role.role_name,
+          dateAdded: info.start_date,
+          image_profile: info.image_profile,
+        };
+      })
+    );
+
+    const filteredEmployeeData = employeeData.filter(
+      (employee) => employee !== null // Filter out null employees
+    );
+
+    res.json(filteredEmployeeData);
+  } catch (error) {
+    console.log(`Error in viewing Users Info: ${error}`);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+}
 module.exports = {
   RegisterAdminUser,
   LoginAdminUser,
@@ -368,4 +405,5 @@ module.exports = {
   Enable2FA,
   Verify2FA,
   LogoutAdminUser,
+  GetAllUsers
 };
