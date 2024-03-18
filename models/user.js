@@ -25,18 +25,6 @@ const userSchema = new mongoose.Schema({
     allowNull: false,
     defaultValue: false,
   },
-  jobSummary: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "JobSummary",
-    },
-  ],
-  appointedEvents: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "AppointedEvent",
-    },
-  ],
 });
 
 const User = mongoose.model("User", userSchema);
