@@ -87,7 +87,6 @@ async function JobApply(req, res) {
         }
         fs.unlinkSync(path);
         const cvUrl = result.url;
-        console.log(result);
         const appliedUser = new JobSummary({
           job_id: id,
           full_name,

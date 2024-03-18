@@ -25,7 +25,7 @@ const cvStorage = multer.diskStorage({
   },
 });
 const imageFileFilter = (req, file, cb) => {
-  if (file.mimetype === "image/jepg" || file.mimetype === "image/png") {
+  if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
     cb(null, true);
   } else {
     cb({ message: "Unsupported file format" }, false);

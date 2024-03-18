@@ -38,7 +38,8 @@ const employeeInfoSchema = new mongoose.Schema({
     required: true,
   },
   image_profile:{
-    type:String,
+    type:Array,
+    required: true,
   },
   maritalstatus: {
     type: String,
