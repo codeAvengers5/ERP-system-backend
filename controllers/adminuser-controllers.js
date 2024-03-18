@@ -1,19 +1,18 @@
-const joi = require("@hapi/joi");
+const joi = require("joi");
 const jwt = require("jsonwebtoken");
 const Employee = require("../models/employee");
 const Role = require("../models/role");
 const EmployeeInfo = require("../models/employeeInfo");
 const hashPassword = require("../middleware/hashPassword");
-const generateBase32Secret = require("../helpers/generateSecret");
 const fs = require("fs");
 const bcrypt = require("bcryptjs");
 const cloudinary = require("../config/coludinary");
 const generateToken = require("../middleware/generateToken");
-const crypto = require("crypto");
-const { encode } = require("hi-base32");
-const OTPAuth = require("otpauth");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
+const Printer = require("node-thermal-printer").printer;
+const printerTypes = require("node-thermal-printer").types;
+const PDFDocument = require("pdfkit");
 const { sendRestPasswordLink } = require("../helpers/sendConfirmationEmail");
 const registerValidator = joi.object({
   full_name: joi.string().required(),
@@ -338,10 +337,13 @@ async function UpdatePassword(req, res, next) {
     if (!isPasswordMatch) {
       return res.status(400).json({ error: "Old password is incorrect" });
     }
+    const { error } = passwordSchema.validate(newPassword);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
     employee.password = hashedNewPassword;
     await employee.save();
-
     res
       .status(200)
       .json({ success: true, message: "Password updated successfully" });
@@ -359,6 +361,75 @@ async function LogoutAdminUser(req, res, next) {
     return res.status(500).json({ Error: error });
   }
 }
+async function GetAllUsers(req, res, next) {
+  try {
+    const employeeInfo = await EmployeeInfo.find({})
+      .populate("employee_id", "employee_id")
+      .exec();
+
+    const employeeData = await Promise.all(
+      employeeInfo.map(async (info) => {
+        const employee = await Employee.findOne({ _id: info.employee_id });
+        if (!employee) {
+          return null;
+        }
+        const roleId = employee.role_id.toString();
+        const role = await Role.findOne({ _id: roleId });
+        if (!role) {
+          return null;
+        }
+        return {
+          name: employee.full_name,
+          email: employee.email,
+          role: role.role_name,
+          dateAdded: info.start_date,
+          image_profile: info.image_profile,
+        };
+      })
+    );
+
+    const filteredEmployeeData = employeeData.filter(
+      (employee) => employee !== null // Filter out null employees
+    );
+
+    res.json(filteredEmployeeData);
+  } catch (error) {
+    console.log(`Error in viewing Users Info: ${error}`);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+async function PrintID(req, res, next) {
+  const idCardData = req.body;
+
+  try {
+    const printerName = "Your Printer Name"; // Replace with the name of your printer
+
+    const printer = new Printer({
+      type: printerTypes.EPSON, // Replace with the appropriate printer type
+      characterSet: "SLOVENIA", // Replace with the appropriate character set
+      interface: `printer:${printerName}`, // Specify the printer name as the interface
+    });
+
+    printer.alignCenter();
+    printer.println(`Name: ${idCardData.name}`);
+    printer.cut();
+
+    printer.print(printerName, (err) => {
+      if (err) {
+        console.error(err);
+        res
+          .status(500)
+          .json({ success: false, message: "Error printing ID card" });
+      } else {
+        console.log("ID card printed successfully");
+        res.json({ success: true, message: "ID card printed successfully" });
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "No printer found" });
+  }
+}
 module.exports = {
   RegisterAdminUser,
   LoginAdminUser,
@@ -368,4 +439,6 @@ module.exports = {
   Enable2FA,
   Verify2FA,
   LogoutAdminUser,
+  PrintID,
+  GetAllUsers
 };
