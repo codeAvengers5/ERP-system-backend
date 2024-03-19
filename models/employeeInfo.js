@@ -41,6 +41,10 @@ const employeeInfoSchema = new mongoose.Schema({
     type:Array,
     required: true,
   },
+  barcode_image: {
+    type: String,
+    required: true,
+  },
   maritalstatus: {
     type: String,
   },
