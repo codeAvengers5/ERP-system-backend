@@ -69,8 +69,9 @@ async function getAllPromotions(req, res) {
   try {
     const promotions = await Promotion.find();
 
-    res.json(promotions);
+    res.status(200).json(promotions);
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Failed to fetch promotions" });
   }
 }

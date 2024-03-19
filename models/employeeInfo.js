@@ -41,7 +41,7 @@ const employeeInfoSchema = new mongoose.Schema({
     type:Array,
     required: true,
   },
-  barcode_image: {
+  barcode: {
     type: String,
     required: true,
   },

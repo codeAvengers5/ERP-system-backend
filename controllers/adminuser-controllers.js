@@ -4,18 +4,14 @@ const Employee = require("../models/employee");
 const Role = require("../models/role");
 const EmployeeInfo = require("../models/employeeInfo");
 const hashPassword = require("../middleware/hashPassword");
-const generateBase32Secret = require("../helpers/generateSecret");
 const fs = require("fs");
 const bcrypt = require("bcryptjs");
 const cloudinary = require("../config/coludinary");
 const generateToken = require("../middleware/generateToken");
-const crypto = require("crypto");
-const { encode } = require("hi-base32");
-const OTPAuth = require("otpauth");
-const bwipjs = require('bwip-js');
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
 const { sendRestPasswordLink } = require("../helpers/sendConfirmationEmail");
+const generateBarcode = require("../helpers/generateBarcode");
 const registerValidator = joi.object({
   full_name: joi.string().required(),
   email: joi.string().email().required(),
@@ -67,36 +63,6 @@ const passwordSchema = joi
     )
   ) // At least one lowercase letter, one uppercase letter, one digit, and one special character
   .required();
-  async function generateBarcode(id) {
-    return new Promise((resolve, reject) => {
-      bwipjs.toBuffer({
-        bcid: 'code128', // Barcode type
-        text: id, // Unique ID for the employee
-        scale: 3, // Barcode scale factor
-        height: 10, // Barcode height in mm
-        includetext: true, // Include human-readable text
-        textxalign: 'center' // Text horizontal alignment
-      }, (err, png) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(png.toString('base64'));
-        }
-      });
-    });
-  }
-  // async function Barcode(req,res,next){
-  //   const { id } = req.params;
-  
-  //   try {
-  //     const barcode = await generateBarcode(id);
-  //     res.send(barcode);
-  //   } catch (error) {
-  //     console.error("Error generating barcode:", error);
-  //     return res.status(500).json({ error: 'Failed to generate barcode' });
-  //   }
-
-  // }
 async function RegisterAdminUser(req, res, next) {
   const {
     full_name,
@@ -157,13 +123,13 @@ async function RegisterAdminUser(req, res, next) {
           password: hashedPassword,
         });
         const employeeId = employee._id;
-      const role = await Role.create({ role_name, employee_id: employeeId });
-      const roleId = role._id;
-      employee.role_id = roleId;
-      await employee.save();
-      // Generate the barcode for the employee
-      const barcode = await generateBarcode(employeeId.toString());
-        
+        const role = await Role.create({ role_name, employee_id: employeeId });
+        const roleId = role._id;
+        employee.role_id = roleId;
+        await employee.save();
+        // Generate the barcode for the employee
+        const barcode = await generateBarcode(employeeId.toString());
+
         const employeeInfo = await EmployeeInfo.create({
           employee_id: employeeId,
           email,
@@ -431,25 +397,19 @@ async function GetAllUsers(req, res, next) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
-async function FetchById(req,res,next){
+async function FetchById(req, res, next) {
   const { id } = req.params;
-
   try {
-    // Fetch data from multiple tables using employee_id
     const employee = await Employee.findOne({ _id: id });
-    
     if (!employee) {
-      return res.status(404).json({ error: 'Employee not found' });
+      return res.status(404).json({ error: "Employee not found" });
     }
-    
-    const employeeInfo = await EmployeeInfo.findOne({ employee_id:id });
-    const role = await Role.findOne({employee_id:id  });
-    
-    // Return the fetched employee data from all tables
-    res.json({ employee, employeeInfo, role });
+    const employeeInfo = await EmployeeInfo.findOne({ employee_id: id });
+    const role = await Role.findOne({ employee_id: id });
+    res.status(200).json({ employee, employeeInfo, role });
   } catch (error) {
-    console.error('Error fetching employee data:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error("Error fetching employee data:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 }
 module.exports = {
@@ -462,5 +422,5 @@ module.exports = {
   Verify2FA,
   LogoutAdminUser,
   FetchById,
-  GetAllUsers
+  GetAllUsers,
 };
