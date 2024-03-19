@@ -29,8 +29,6 @@ const jobPostSchema = new mongoose.Schema(
   },
   { toJSON: { virtuals: true } }
 );
-
-// Create a virtual property to dynamically calculate the status based on the closing date
 jobPostSchema.virtual('currentStatus').get(function () {
   const currentDate = new Date();
   return currentDate > this.closingDate ? 'closed' : 'open';
