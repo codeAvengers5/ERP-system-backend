@@ -178,10 +178,6 @@ async function LoginAdminUser(req, res, next) {
   if (!validPassword) {
     return res.status(403).send({ message: "Invalid Email or Password" });
   }
-  const { error } = passwordSchema.validate(validPassword);
-  if (error) {
-    console.log("Update your password first");
-  }
   const role = await Role.findOne({ _id: account.role_id });
   if (!role) {
     return res.status(403).json({ message: "Role not found" });
@@ -205,6 +201,10 @@ async function LoginAdminUser(req, res, next) {
     res
       .status(200)
       .json({ token: token, userInfo: userInfo, message: "LoggedIn" });
+    const { error } = passwordSchema.validate(validPassword);
+    if (error) {
+      return res.json({ message: "Update your password first" });
+    }
   } catch (error) {
     console.log("Login failed with error : ", error);
     return res.status(500).json({ Error: error });
@@ -431,6 +431,8 @@ async function PrintID(req, res, next) {
     });
   } catch (error) {
     res.status(500).json({ error: "No printer found" });
+  }
+}
 async function FetchById(req, res, next) {
   const { id } = req.params;
   try {
