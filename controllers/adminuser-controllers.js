@@ -13,6 +13,7 @@ const QRCode = require("qrcode");
 const Printer = require("node-thermal-printer").printer;
 const printerTypes = require("node-thermal-printer").types;
 const { sendRestPasswordLink } = require("../helpers/sendConfirmationEmail");
+const generateBarcode = require("../helpers/generateBarcode");
 const registerValidator = joi.object({
   full_name: joi.string().required(),
   email: joi.string().email().required(),
@@ -128,6 +129,9 @@ async function RegisterAdminUser(req, res, next) {
         const roleId = role._id;
         employee.role_id = roleId;
         await employee.save();
+        // Generate the barcode for the employee
+        const barcode = await generateBarcode(employeeId.toString());
+
         const employeeInfo = await EmployeeInfo.create({
           employee_id: employeeId,
           email,
@@ -137,6 +141,7 @@ async function RegisterAdminUser(req, res, next) {
           gender,
           images: urls,
           image_profile: urls_pic,
+          barcode: barcode,
         });
         const token = await generateToken({ id: employee._id });
         if (!token) return next({ status: 500 });
@@ -426,6 +431,19 @@ async function PrintID(req, res, next) {
     });
   } catch (error) {
     res.status(500).json({ error: "No printer found" });
+async function FetchById(req, res, next) {
+  const { id } = req.params;
+  try {
+    const employee = await Employee.findOne({ _id: id });
+    if (!employee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+    const employeeInfo = await EmployeeInfo.findOne({ employee_id: id });
+    const role = await Role.findOne({ employee_id: id });
+    res.status(200).json({ employee, employeeInfo, role });
+  } catch (error) {
+    console.error("Error fetching employee data:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 }
 module.exports = {
@@ -438,5 +456,6 @@ module.exports = {
   Verify2FA,
   LogoutAdminUser,
   PrintID,
+  FetchById,
   GetAllUsers,
 };

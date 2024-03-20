@@ -1,41 +1,37 @@
 const mongoose = require('mongoose');
 
-const jobPostSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true,
+const jobPostSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    requirement: {
+      type: String,
+      required: true,
+    },
+    responsibility: {
+      type: String,
+      required: true,
+    },
+    salary: {
+      type: Number,
+      required: true,
+    },
+    closingDate: {
+      type: Date,
+      required: true,
+    },
   },
-  description: {
-    type: String,
-    required: true,
-  },
-  requirement: {
-    type: String,
-    required: true,
-  },
-  responsibility: {
-    type: String,
-    required: true,
-  },
-  salary: {
-    type: Number,
-    required: true,
-  },
-  status: {
-    type: Boolean,
-    default: true,
-  },
-  closingDate: {
-    type: Date,
-    required: true,
-  },
-});
-jobPostSchema.pre('save', function (next) {
+  { toJSON: { virtuals: true } }
+);
+jobPostSchema.virtual('currentStatus').get(function () {
   const currentDate = new Date();
-  if (currentDate > this.closingDate) {
-    this.status = false; // Close the job post if the current date is after the closing date
-  }
-  next();
+  return currentDate > this.closingDate ? 'closed' : 'open';
 });
 
 const JobPost = mongoose.model('JobPost', jobPostSchema);
