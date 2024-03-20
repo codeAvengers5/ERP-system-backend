@@ -12,7 +12,6 @@ const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
 const Printer = require("node-thermal-printer").printer;
 const printerTypes = require("node-thermal-printer").types;
-const PDFDocument = require("pdfkit");
 const { sendRestPasswordLink } = require("../helpers/sendConfirmationEmail");
 const registerValidator = joi.object({
   full_name: joi.string().required(),
@@ -426,8 +425,7 @@ async function PrintID(req, res, next) {
       }
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "No printer found" });
+    res.status(500).json({ error: "No printer found" });
   }
 }
 module.exports = {
@@ -440,5 +438,5 @@ module.exports = {
   Verify2FA,
   LogoutAdminUser,
   PrintID,
-  GetAllUsers
+  GetAllUsers,
 };
