@@ -35,5 +35,5 @@ router.post("/forgotpassword", ForgotPassword);
 router.post("/resetpassword/:id/:token", ResetPassword);
 router.get("/logout", LogoutAdminUser);
 router.get("/users", isAuthenticated, isItAdmin, GetAllUsers);
-router.post("/printid",  PrintID);
+router.post("/printid", isAuthenticated, isItAdmin, PrintID);
 module.exports = router;
