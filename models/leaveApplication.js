@@ -14,7 +14,7 @@ const leaveappSchema = new mongoose.Schema({
     required: true,
   },
   leave_date: {
-    type: String,
+    type: Date,
     required: true,
   },
   detail: {
@@ -27,7 +27,21 @@ const leaveappSchema = new mongoose.Schema({
     default: "pending",
   },
 });
+leaveappSchema.virtual('currentStatus').get(function () {
+  const currentDate = new Date();
+  const { leave_date, duration } = this;
+  const [value, unit] = duration.split(' ');
+  const endDate = new Date(leave_date);
+  if (unit === 'days') {
+    endDate.setDate(leave_date.getDate() + parseInt(value));
+  } else if (unit === 'weeks') {
+    endDate.setDate(leave_date.getDate() + parseInt(value) * 7);
+  } else if (unit === 'months') {
+    endDate.setMonth(leave_date.getMonth() + parseInt(value));
+  }
 
+  return currentDate > endDate ? 'duration ended' : 'ongoing';
+});
 const LeaveApplication = mongoose.model("LeaveApplication", leaveappSchema);
 
 module.exports = LeaveApplication;
