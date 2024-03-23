@@ -8,8 +8,8 @@ const {
   ResetPassword,
   UpdatePassword,
   LogoutAdminUser,
-  GetAllUsers,
-  FetchById,
+  // GetAllUsers,
+  // FetchById,
 } = require("../controllers/adminuser-controllers");
 const { uploadImages } = require("../config/multer");
 const { isAuthenticated, isItAdmin } = require("../middleware/auth");
@@ -34,6 +34,6 @@ router.post("/updatepassword/:id", UpdatePassword);
 router.post("/forgotpassword", ForgotPassword);
 router.post("/resetpassword/:id/:token", ResetPassword);
 router.get("/logout", LogoutAdminUser);
-router.get("/users", isAuthenticated, isItAdmin, GetAllUsers);
-router.get("/getemployee/:id",FetchById);
+// router.get("/users", isAuthenticated, isItAdmin, GetAllUsers);
+// router.get("/getemployee/:id",FetchById);
 module.exports = router;
