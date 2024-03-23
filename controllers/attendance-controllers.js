@@ -7,14 +7,6 @@ async function fetchAttendance(req, res, next) {
   try {
     const employee = await EmployeeInfo.findOne({ barcode });
     if (employee) {
-      const isLeave = await LeaveApplication.findOne({
-        employee_id: employee.employee_id,
-      });
-      if (isLeave.currentStatus === "ongoing") {
-        res.json({
-          message: `Leave at ${isLeave.leave_date} for${isLeave.duration}`,
-        });
-      }
       const attendance = await Attendance.findOne({
         employee_id: employee.employee_id,
       });
