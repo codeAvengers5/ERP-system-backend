@@ -8,6 +8,8 @@ const {
   ResetPassword,
   UpdatePassword,
   LogoutAdminUser,
+  PrintID,
+  GetAllUsers,
   GetAllUsers,
   FetchById,
 } = require("../controllers/adminuser-controllers");
@@ -36,4 +38,6 @@ router.post("/resetpassword/:id/:token", ResetPassword);
 router.get("/logout", LogoutAdminUser);
 router.get("/users", isAuthenticated, isItAdmin, GetAllUsers);
 router.get("/getemployee/:id",isAuthenticated,isItAdmin,FetchById);
+router.post("/printid", isAuthenticated, isItAdmin, PrintID);
+router.get("/getemployee/:id",FetchById);
 module.exports = router;
