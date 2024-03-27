@@ -16,6 +16,7 @@ const registerValidator = joi.object({
   full_name: joi.string().required(),
   email: joi.string().email().required(),
   password: joi.string().min(6).required(),
+  dob: joi.string().required(),
   position: joi.string().required(),
   role_name: joi.string().required(),
   start_date: joi.date().required(),
@@ -68,6 +69,7 @@ async function RegisterAdminUser(req, res, next) {
     full_name,
     email,
     password,
+    dob,
     position,
     role_name,
     start_date,
@@ -80,6 +82,7 @@ async function RegisterAdminUser(req, res, next) {
     full_name,
     email,
     password,
+    dob,
     position,
     role_name,
     start_date,
@@ -133,6 +136,7 @@ async function RegisterAdminUser(req, res, next) {
         const employeeInfo = await EmployeeInfo.create({
           employee_id: employeeId,
           email,
+          dob,
           position,
           start_date,
           salary,
@@ -360,58 +364,6 @@ async function LogoutAdminUser(req, res, next) {
     return res.status(500).json({ Error: error });
   }
 }
-async function GetAllUsers(req, res, next) {
-  try {
-    const employeeInfo = await EmployeeInfo.find({})
-      .populate("employee_id", "employee_id")
-      .exec();
-
-    const employeeData = await Promise.all(
-      employeeInfo.map(async (info) => {
-        const employee = await Employee.findOne({ _id: info.employee_id });
-        if (!employee) {
-          return null;
-        }
-        const roleId = employee.role_id.toString();
-        const role = await Role.findOne({ _id: roleId });
-        if (!role) {
-          return null;
-        }
-        return {
-          name: employee.full_name,
-          email: employee.email,
-          role: role.role_name,
-          dateAdded: info.start_date,
-          image_profile: info.image_profile,
-        };
-      })
-    );
-
-    const filteredEmployeeData = employeeData.filter(
-      (employee) => employee !== null // Filter out null employees
-    );
-
-    res.json(filteredEmployeeData);
-  } catch (error) {
-    console.log(`Error in viewing Users Info: ${error}`);
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-}
-async function FetchById(req, res, next) {
-  const { id } = req.params;
-  try {
-    const employee = await Employee.findOne({ _id: id });
-    if (!employee) {
-      return res.status(404).json({ error: "Employee not found" });
-    }
-    const employeeInfo = await EmployeeInfo.findOne({ employee_id: id });
-    const role = await Role.findOne({ employee_id: id });
-    res.status(200).json({ employee, employeeInfo, role });
-  } catch (error) {
-    console.error("Error fetching employee data:", error);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-}
 module.exports = {
   RegisterAdminUser,
   LoginAdminUser,
@@ -421,6 +373,4 @@ module.exports = {
   Enable2FA,
   Verify2FA,
   LogoutAdminUser,
-  FetchById,
-  GetAllUsers,
-};
+  };
