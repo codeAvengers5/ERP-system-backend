@@ -1,4 +1,4 @@
-const joi = require("@hapi/joi");
+const joi = require("joi");
 const jwt = require("jsonwebtoken");
 const Employee = require("../models/employee");
 const Role = require("../models/role");
@@ -10,6 +10,8 @@ const cloudinary = require("../config/coludinary");
 const generateToken = require("../middleware/generateToken");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
+const Printer = require("node-thermal-printer").printer;
+const printerTypes = require("node-thermal-printer").types;
 const { sendRestPasswordLink } = require("../helpers/sendConfirmationEmail");
 const generateBarcode = require("../helpers/generateBarcode");
 const registerValidator = joi.object({
@@ -343,10 +345,13 @@ async function UpdatePassword(req, res, next) {
     if (!isPasswordMatch) {
       return res.status(400).json({ error: "Old password is incorrect" });
     }
+    const { error } = passwordSchema.validate(newPassword);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
     employee.password = hashedNewPassword;
     await employee.save();
-
     res
       .status(200)
       .json({ success: true, message: "Password updated successfully" });
@@ -403,6 +408,35 @@ async function GetAllUsers(req, res, next) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
+async function PrintID(req, res, next) {
+  const idCardData = req.body;
+
+  try {
+    const printerName = "Your Printer Name"; // Replace with the name of your printer
+
+    const printer = new Printer({
+      type: printerTypes.EPSON, // Replace with the appropriate printer type
+      characterSet: "SLOVENIA", // Replace with the appropriate character set
+      interface: `printer:${printerName}`, // Specify the printer name as the interface
+    });
+
+    printer.alignCenter();
+    printer.println(`Name: ${idCardData.name}`);
+    printer.cut();
+
+    printer.print(printerName, (err) => {
+      if (err) {
+        console.error(err);
+        res
+          .status(500)
+          .json({ success: false, message: "Error printing ID card" });
+      } else {
+        console.log("ID card printed successfully");
+        res.json({ success: true, message: "ID card printed successfully" });
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: "No printer found" });
 async function FetchById(req, res, next) {
   const { id } = req.params;
   try {
@@ -427,6 +461,7 @@ module.exports = {
   Enable2FA,
   Verify2FA,
   LogoutAdminUser,
+  PrintID,
   FetchById,
   GetAllUsers,
 };
