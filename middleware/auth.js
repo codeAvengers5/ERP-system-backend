@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const Employee = require("../models/employee");
 async function isAuthenticated(req, res, next) {
   let token;
   if (req.cookies.jwt) {
@@ -19,6 +20,26 @@ async function isAuthenticated(req, res, next) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_TOKEN_KEY);
     req.user = decoded;
+    const user = await Employee.findOne({ _id: decoded.userId });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User does not exist",
+      });
+    }
+    if (!user.enable2fa) {
+      return res.status(401).json({
+        success: false,
+        message: "2FA is not enabled",
+      });
+    }
+    if (!user.is2faVerified) {
+      return res.status(401).json({
+        success: false,
+        message: "2FA is not verified",
+      });
+    }
+
     next();
   } catch (error) {
     console.log(error);
