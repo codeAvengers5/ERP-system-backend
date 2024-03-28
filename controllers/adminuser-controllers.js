@@ -201,10 +201,6 @@ async function LoginAdminUser(req, res, next) {
     res
       .status(200)
       .json({ token: token, userInfo: userInfo, message: "LoggedIn" });
-    const { error } = passwordSchema.validate(validPassword);
-    if (error) {
-      return res.json({ message: "Update your password first" });
-    }
   } catch (error) {
     console.log("Login failed with error : ", error);
     return res.status(500).json({ Error: error });

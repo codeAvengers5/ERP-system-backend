@@ -1,10 +1,13 @@
+const EmployeeInfo = require("../models/employeeInfo");
 const LeaveApplication = require("../models/leaveApplication");
 async function createLeaveApplication(req, res) {
   try {
     const { full_name, duration, leave_date, detail } = req.body;
     const employee_id = req.user.id; //employee_id
+    const employeeInfo = await EmployeeInfo.findOne({employee_id: employee_id});
     const leaveApplication = new LeaveApplication({
       employee_id,
+      position: employeeInfo.position,
       full_name,
       duration,
       leave_date,
