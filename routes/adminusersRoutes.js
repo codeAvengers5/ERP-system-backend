@@ -10,7 +10,6 @@ const {
   LogoutAdminUser,
   PrintID,
   GetAllUsers,
-  GetAllUsers,
   FetchById,
 } = require("../controllers/adminuser-controllers");
 const { uploadImages } = require("../config/multer");
