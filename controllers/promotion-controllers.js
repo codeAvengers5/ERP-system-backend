@@ -1,5 +1,5 @@
 const Promotion = require("../models/promotion");
-const joi = require("@hapi/joi");
+const joi = require("joi");
 const cloudinary = require("../config/coludinary");
 const fs = require("fs");
 const promotionValidator = joi.object({
