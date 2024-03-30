@@ -14,12 +14,12 @@ const router = express.Router();
 router.get("/users", isAuthenticated, isItAdmin, GetAllUsers);
 router.get("/getemployee/:id", FetchById);
 router.put(
-  "/updateemployee/:id",
+  "/updateemployee_forit/:id",
   isAuthenticated,
   isItAdmin,
   UpdateEmployeeforItAdmin
 );
-router.post(
+router.put(
   "/updateemployee/:id",
   isAuthenticated,
   isEmployee,
