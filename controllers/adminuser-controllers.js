@@ -1,4 +1,4 @@
-const joi = require("@hapi/joi");
+const joi = require("joi");
 const jwt = require("jsonwebtoken");
 const Employee = require("../models/employee");
 const Role = require("../models/role");
@@ -10,6 +10,8 @@ const cloudinary = require("../config/coludinary");
 const generateToken = require("../middleware/generateToken");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
+const Printer = require("node-thermal-printer").printer;
+const printerTypes = require("node-thermal-printer").types;
 const { sendRestPasswordLink } = require("../helpers/sendConfirmationEmail");
 const generateBarcode = require("../helpers/generateBarcode");
 const registerValidator = joi.object({
@@ -180,10 +182,6 @@ async function LoginAdminUser(req, res, next) {
   if (!validPassword) {
     return res.status(403).send({ message: "Invalid Email or Password" });
   }
-  const { error } = passwordSchema.validate(validPassword);
-  if (error) {
-    console.log("Update your password first");
-  }
   const role = await Role.findOne({ _id: account.role_id });
   if (!role) {
     return res.status(403).json({ message: "Role not found" });
@@ -343,10 +341,13 @@ async function UpdatePassword(req, res, next) {
     if (!isPasswordMatch) {
       return res.status(400).json({ error: "Old password is incorrect" });
     }
+    const { error } = passwordSchema.validate(newPassword);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
     employee.password = hashedNewPassword;
     await employee.save();
-
     res
       .status(200)
       .json({ success: true, message: "Password updated successfully" });
@@ -373,4 +374,4 @@ module.exports = {
   Enable2FA,
   Verify2FA,
   LogoutAdminUser,
-  };
+};
