@@ -1,13 +1,8 @@
-const joi = require("@hapi/joi");
-const jwt = require("jsonwebtoken");
 const Employee = require("../models/employee");
 const Role = require("../models/role");
 const EmployeeInfo = require("../models/employeeInfo");
-const hashPassword = require("../middleware/hashPassword");
 const fs = require("fs");
-const bcrypt = require("bcryptjs");
 const cloudinary = require("../config/coludinary");
-const generateToken = require("../middleware/generateToken");
 
 async function GetAllUsers(req, res, next) {
   try {
@@ -61,7 +56,7 @@ async function FetchById(req, res, next) {
     return res.status(500).json({ error: "Internal server error" });
   }
 }
-async function UpdateEmployeeforItAdmin(req, res, next) {
+async function UpdateEmployeeforItAdmin(req, res) {
   try {
     const { id } = req.params;
     const {
@@ -74,6 +69,10 @@ async function UpdateEmployeeforItAdmin(req, res, next) {
       salary,
       gender,
     } = req.body;
+    if(!full_name  || !email || !dob  || !gender || !position || !role_name  || !start_date  || !salary ){
+     return res.status(400).json({message: 'Missing required fields'});
+    }
+
     const images = req.files && req.files["images"];
     const image_profile = req.files && req.files["image_profile"];
     const uploader = async (path) => await cloudinary.uploads(path, "images");
@@ -96,36 +95,36 @@ async function UpdateEmployeeforItAdmin(req, res, next) {
         urls_pic.push(newPath);
         fs.unlinkSync(path);
       }
-
-      const employee = await Employee.findById(id);
+      const employeeInfo = await EmployeeInfo.findOne({ employee_id: id });
+      if (!employeeInfo) {
+        return res.status(404).json({ message: "Employee info not found" });
+      }
+      const employee = await Employee.findByIdAndUpdate(id,
+        {full_name:full_name,email:email});
       if (!employee) {
         return res.status(404).json({ message: "Employee not found" });
       }
-      employee.full_name = full_name;
-      employee.email = email;
-      const updatedEmployee = await employee.save();
-      const roleId = updatedEmployee.role_id;
+      const roleId = employee.role_id;
       const role = await Role.findByIdAndUpdate(roleId, { role_name });
-      const employeeInfo = await EmployeeInfo.findOneAndUpdate(
-        { employee_id: updatedEmployee._id },
+      const updatedemployeeInfo = await EmployeeInfo.findByIdAndUpdate(
+        employeeInfo._id ,
         {
-          $set: {
-            position,
-            start_date,
-            salary,
-            email,
-            dob,
-            gender,
-            images: urls,
-            image_profile: urls_pic ? urls_pic[0] : "",
-          },
-        },
-        { new: true, upsert: true }
+          position:position,
+          start_date:start_date,
+          salary: salary,
+          email:  email,
+          dob: dob,
+          gender: gender,
+          images: urls,
+          image_profile: urls_pic[0]
+        }
       );
-
+      if(!updatedemployeeInfo){
+        return res.status(404).json({message:"not found"})
+      }
       res.status(200).json({
         message: "Employee account updated successfully",
-        value: { employeeInfo, employee, role },
+        value: { updatedemployeeInfo, employee, role },
       });
     } else {
       return res.status(405).json({
@@ -137,22 +136,33 @@ async function UpdateEmployeeforItAdmin(req, res, next) {
     res.status(500).json({ message: "Internal server error" });
   }
 }
-async function UpdateEmployeeInfo(req, res, next) {
+async function UpdateEmployeeInfo(req, res) {
   try {
     const { id } = req.params;
     const { maritalstatus, address, phone_no } = req.body;
-
+    if (!maritalstatus || !address || !phone_no) {
+      return res.status(400).json({ message: "Missing data!" });
+    }
     const employeeInfo = await EmployeeInfo.findOne({ employee_id: id });
     if (!employeeInfo) {
       return res.status(404).json({ message: "Employee info not found" });
     }
-    employeeInfo.maritalstatus = maritalstatus;
-    employeeInfo.address = address;
-    employeeInfo.phone_no = phone_no;
-
-    await employeeInfo.save();
-
-    res.status(200).json({ message: "Employee data entered successfully" });
+    const updatedInfo = await EmployeeInfo.findByIdAndUpdate(
+      employeeInfo._id,
+      {
+        maritalstatus: maritalstatus,
+        address: address,
+        phone_no: phone_no,
+      },
+      { new: true }
+    );
+    if (!updatedInfo) {
+      return res.status(404).json({ message: "Employee info not found" });
+    }
+    res.status(200).json({
+      message: "Employee data updated successfully",
+      updatedInfo: updatedInfo,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
