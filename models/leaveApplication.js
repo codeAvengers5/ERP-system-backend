@@ -26,7 +26,10 @@ const leaveappSchema = new mongoose.Schema({
     enum: ["pending", "approved", "rejected"],
     default: "pending",
   },
-});
+  
+},
+{ toJSON: { virtuals: true } }
+);
 leaveappSchema.virtual('currentStatus').get(function () {
   const currentDate = new Date();
   const { leave_date, duration } = this;

@@ -1,5 +1,5 @@
 const express = require("express");
-const { fetchAttendance } = require("../controllers/attendance-controllers");
 const router = express.Router();
-router.post("/fetchingattendance", fetchAttendance);
+const {performCheckIn } = require("../controllers/attendance-controllers");
+router.get("/check-in",performCheckIn);
 module.exports = router;
