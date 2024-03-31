@@ -1,10 +1,13 @@
+const EmployeeInfo = require("../models/employeeInfo");
 const LeaveApplication = require("../models/leaveApplication");
 async function createLeaveApplication(req, res) {
   try {
     const { full_name, duration, leave_date, detail } = req.body;
     const employee_id = req.user.id; //employee_id
+    const employeeInfo = await EmployeeInfo.findOne({employee_id: employee_id});
     const leaveApplication = new LeaveApplication({
       employee_id,
+      position: employeeInfo.position,
       full_name,
       duration,
       leave_date,
@@ -13,6 +16,20 @@ async function createLeaveApplication(req, res) {
     });
     await leaveApplication.save();
     res.status(201).json({ message: "Leave application created successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+async function getLeaveApplicationById_forEmployee(req, res) {
+  try {
+    const { id } = req.params;
+
+    const leaveApplication = await LeaveApplication.findById(id);
+    if (!leaveApplication) {
+      return res.status(404).json({ message: "Leave application not found" });
+    }
+    return res.status(200).json(leaveApplication);
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal server error" });
@@ -118,6 +135,7 @@ async function filterByStatus(req, res) {
 module.exports = {
   createLeaveApplication,
   getLeaveApplication_forEmployee,
+  getLeaveApplicationById_forEmployee,
   filterByStatus,
   updateLeaveApplication,
   updateStatus,

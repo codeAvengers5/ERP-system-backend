@@ -5,6 +5,10 @@ const leaveappSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Employee",
   },
+  position:{
+    type: mongoose.Schema.Types.String,
+    ref: "EmployeeInfo"
+  },
   full_name: {
     type: String,
     required: true,
