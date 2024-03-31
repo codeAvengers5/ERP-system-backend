@@ -9,6 +9,7 @@ const {
   getAllLeaveApplications_forHR,
   updateStatus,
   filterByStatus,
+  getLeaveApplicationById_forEmployee,
 } = require("../controllers/leaveapplication-controller");
 const {
   isAuthenticated,
@@ -33,6 +34,12 @@ router.get(
   isAuthenticated,
   isHRAdmin,
   getAllLeaveApplications_forHR
+);
+router.get(
+  "/leaveapplication_employee/:id",
+  isAuthenticated,
+  isEmployee,
+  getLeaveApplicationById_forEmployee
 );
 router.get(
   "/leaveapplications_employee",

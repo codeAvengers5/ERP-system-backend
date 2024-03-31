@@ -7,6 +7,7 @@ const jobRoute = require("./routes/jobRoutes");
 const promotionRoute = require("./routes/promotionRoutes");
 const leaveRoute = require("./routes/leaveRoutes");
 const attendanceRoute = require("./routes/attendanceRoutes")
+const employeeRoute = require("./routes/employeeRoutes");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 require("dotenv").config();
@@ -20,6 +21,7 @@ app.use(jobRoute);
 app.use(promotionRoute);
 app.use(leaveRoute);
 app.use(attendanceRoute)
+app.use(employeeRoute);
 connectDB()
   .then(() => {
     app.listen(process.env.PORT, () => {
