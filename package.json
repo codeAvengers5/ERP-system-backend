@@ -12,7 +12,6 @@
   "license": "ISC",
   "dependencies": {
     "@google-cloud/local-auth": "^3.0.1",
-    "@hapi/joi": "^17.1.1",
     "bcryptjs": "^2.4.3",
     "bwip-js": "^4.3.1",
     "cloudinary": "^2.0.1",
