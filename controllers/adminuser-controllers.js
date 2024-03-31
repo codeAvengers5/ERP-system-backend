@@ -371,6 +371,8 @@ async function LogoutAdminUser(req, res, next) {
     return res.status(500).json({ Error: error });
   }
 }
+
+
 module.exports = {
   RegisterAdminUser,
   LoginAdminUser,
@@ -381,3 +383,4 @@ module.exports = {
   Verify2FA,
   LogoutAdminUser,
 };
+
