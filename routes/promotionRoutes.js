@@ -26,6 +26,7 @@ router.get(
 );
 router.put(
   "/updatePromotionById/:id",
+  uploadImages.array("images", 10),
   isAuthenticated,
   isHRAdmin,
   updatePromotionById

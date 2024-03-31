@@ -8,10 +8,6 @@ const {
   ResetPassword,
   UpdatePassword,
   LogoutAdminUser,
-  PrintID,
-  GetAllUsers,
-  GetAllUsers,
-  FetchById,
 } = require("../controllers/adminuser-controllers");
 const { uploadImages } = require("../config/multer");
 const { isAuthenticated, isItAdmin } = require("../middleware/auth");

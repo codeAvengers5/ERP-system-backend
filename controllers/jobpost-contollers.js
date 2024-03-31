@@ -1,5 +1,5 @@
 const JobPost = require("../models/jobPost");
-const joi = require("@hapi/joi");
+const joi = require("joi");
 
 // Create a new job post
 const jobPostValidator = joi.object({
