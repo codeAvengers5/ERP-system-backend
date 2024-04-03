@@ -45,5 +45,5 @@ connectDB()
       } else {
         console.log('Outside the desired range. Skipping check-in.');
       }
-    }, 1 * 60 * 1000);
+    }, 5000);
   }
