@@ -31,22 +31,49 @@ attendanceSchema.virtual("status").get(async function () {
     });
    
   if (leaveApplication) {
-    if(leaveApplication.currentStatus === "ongoing") return "On Leave";
+    if(leaveApplication.currentStatus === "ongoing"){
+    const currentDate = new Date();
+    const attendanceRecord = {
+      date: currentDate,
+      check_in: null,
+      status: "On Leave",
+    };
+    
+    this.attendanceHistory.push(attendanceRecord);
+    await this.save();
+    return "On Leave";}
   } 
   else if (!this.attendanceHistory.length) {
+    const currentDate = new Date();
+    const attendanceRecord = {
+      date: currentDate,
+      check_in: null,
+      status: "Absent",
+    };
+    this.attendanceHistory.push(attendanceRecord);
+    await this.save();
     return "Absent";
   }
 
   const latestAttendance = this.attendanceHistory[this.attendanceHistory.length - 1];
   console.log(latestAttendance.check_in);
   if (!latestAttendance.check_in) {
+    const currentDate = new Date();
+    const attendanceRecord = {
+      date: currentDate,
+      check_in: null,
+      status: "Absent",
+    };
+    this.attendanceHistory.push(attendanceRecord);
+    await this.save();
     return "Absent";
   }
 
   const checkInTime = latestAttendance.check_in.getHours() * 60 + latestAttendance.check_in.getMinutes();
-  const lateThreshold = (2 * 60) + 30; // 8:30 AM
-   console.log(checkInTime, lateThreshold)
-  if (checkInTime <= lateThreshold) {
+  const lateThreshold = new Date();
+  lateThreshold.setHours(20, 30, 0, 0);
+  console.log(checkInTime, lateThreshold)
+  if (checkInTime <= lateThreshold.getHours() * 60 + lateThreshold.getMinutes()) {
     return "Present";
   }
 
