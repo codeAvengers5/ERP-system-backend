@@ -126,6 +126,7 @@ async function RegisterAdminUser(req, res, next) {
           full_name,
           email,
           password: hashedPassword,
+          is2faVerified: false,
         });
         const employeeId = employee._id;
         const role = await Role.create({ role_name, employee_id: employeeId });
@@ -249,7 +250,10 @@ async function Verify2FA(req, res, next) {
       });
     }
     if (!user.enable2fa) {
-      await Employee.updateOne({ _id: id }, { enable2fa: true });
+      await Employee.updateOne(
+        { _id: id },
+        { enable2fa: true, is2faVerified: true }
+      );
     }
     const userSecret = user.secrets2fa;
     const otpResult = speakeasy.totp.verify({
@@ -358,6 +362,8 @@ async function UpdatePassword(req, res, next) {
 }
 async function LogoutAdminUser(req, res, next) {
   try {
+    const userId = req.user.id;
+    await Employee.updateOne({ _id: userId }, { is2faVerified: false });
     res.clearCookie("jwt");
     res.status(200).json({ message: "Logged Out" });
   } catch (error) {
@@ -365,6 +371,8 @@ async function LogoutAdminUser(req, res, next) {
     return res.status(500).json({ Error: error });
   }
 }
+
+
 module.exports = {
   RegisterAdminUser,
   LoginAdminUser,
@@ -375,3 +383,4 @@ module.exports = {
   Verify2FA,
   LogoutAdminUser,
 };
+

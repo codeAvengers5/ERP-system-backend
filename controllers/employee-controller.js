@@ -168,9 +168,41 @@ async function UpdateEmployeeInfo(req, res) {
     res.status(500).json({ message: "Internal server error" });
   }
 }
+async function PrintID(req, res, next) {
+  const idCardData = req.body;
+
+  try {
+    const printerName = "Your Printer Name"; // Replace with the name of your printer
+
+    const printer = new Printer({
+      type: printerTypes.EPSON, // Replace with the appropriate printer type
+      characterSet: "SLOVENIA", // Replace with the appropriate character set
+      interface: `printer:${printerName}`, // Specify the printer name as the interface
+    });
+
+    printer.alignCenter();
+    printer.println(`Name: ${idCardData.name}`);
+    printer.cut();
+
+    printer.print(printerName, (err) => {
+      if (err) {
+        console.error(err);
+        res
+          .status(500)
+          .json({ success: false, message: "Error printing ID card" });
+      } else {
+        console.log("ID card printed successfully");
+        res.json({ success: true, message: "ID card printed successfully" });
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: "No printer found" });
+  }
+}
 module.exports = {
   FetchById,
   GetAllUsers,
   UpdateEmployeeforItAdmin,
   UpdateEmployeeInfo,
+  PrintID
 };
