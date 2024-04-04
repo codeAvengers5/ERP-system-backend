@@ -17,11 +17,10 @@ router.post(
  uploadImages.array("images", 10),
   createPromotion
 );
-router.get("/getAllPromotions", isAuthenticated, isHRAdmin, getAllPromotions);
+router.get("/getAllPromotions", isAuthenticated, getAllPromotions);
 router.get(
   "/getPromotionById/:id",
   isAuthenticated,
-  isHRAdmin,
   getPromotionById
 );
 router.put(
@@ -31,5 +30,6 @@ router.put(
   isHRAdmin,
   updatePromotionById
 );
-router.delete("/deletePromotionById/:id", deletePromotionById);
+router.delete("/deletePromotionById/:id",isAuthenticated,
+isHRAdmin, deletePromotionById);
 module.exports = router;

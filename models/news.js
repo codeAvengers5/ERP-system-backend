@@ -9,12 +9,10 @@ const newsSchema = new mongoose.Schema({
     type: Boolean,
     required: true,
   },
-  images: [
-    {
-      type: String,
-      required: true,
-    },
-  ],
+  images: {
+    type: Array,
+    required: true,
+  },
   description: {
     type: String,
     required: true,

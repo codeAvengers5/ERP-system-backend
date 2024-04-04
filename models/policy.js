@@ -5,6 +5,10 @@ const policySchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  title: {
+    type: String,
+    required: true,
+  },
   content: {
     type: String,
     required: true,
