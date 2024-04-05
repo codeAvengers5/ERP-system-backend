@@ -170,22 +170,25 @@ async function getAttendancefor_Employee(req, res) {
 async function searchEmployee(req, res) {
   const { name } = req.query;
   try {
-    const employee = await Employee.findOne({ full_name: name });
-    if (!employee) {
-      return res.status(404).json({ error: "Employee not found" });
+    const employees = await Employee.find({ full_name: { $regex: `^${name}`, $options: 'i' } });
+    
+    if (employees.length === 0) {
+      return res.status(404).json({ error: "No employees found" });
     }
-    const E_id = employee._id;
-    const attendanceInfo = await Attendance.findOne({ employee_id: E_id });
-    if (!attendanceInfo) {
-      return res
-        .status(404)
-        .json({ error: "No attendance info found for this employee" });
-    }
+
+    const attendanceInfo = await Promise.all(employees.map(async (employee) => {
+      const E_id = employee._id;
+      return await Attendance.findOne({ employee_id: E_id });
+    }));
+
     return res.status(200).json({
-      attendanceInfo: attendanceInfo,
+      employeesWithAttendance: employees.map((employee, index) => ({
+        employee: employee,
+        attendanceInfo: attendanceInfo[index]
+      }))
     });
   } catch (error) {
-    console.error("Error searching employee:", error);
+    console.error("Error searching employees:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -283,8 +286,8 @@ async function filterEmployeesByDate(req, res) {
 }
 async function getAttendanceCounts(req, res) {
   try {
-    const currentDate = moment().startOf('day').toDate(); 
-
+    const currentDate = moment('2024-04-01').startOf('day').toDate(); 
+    const employeeCounts = await Employee.countDocuments();
     const attendanceCounts = await Attendance.aggregate([
       {
         $match: {
@@ -312,7 +315,7 @@ async function getAttendanceCounts(req, res) {
 
     const { absent, present, late, leave } = attendanceCounts[0];
 
-    res.status(200).json({ absent, present, late, leave });
+    res.status(200).json({ absent, present, late, leave,employeeCounts });
   } catch (error) {
     console.error('Error fetching attendance counts:', error);
     res.status(500).json({ message: "Internal Server Error" });
