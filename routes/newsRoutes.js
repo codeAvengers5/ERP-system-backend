@@ -8,12 +8,12 @@ const {
 } = require("../controllers/news-controller");
 const {uploadImages} = require("../config/multer");
 const router = express.Router();
-const { isAuthenticated, isHRAdmin } = require("../middleware/auth");
+const { isAuthenticated, isManager } = require("../middleware/auth");
 
 router.post(
   "/createNews",
   isAuthenticated,
-  isHRAdmin,
+  isManager,
  uploadImages.array("images", 10),
  createNews
 );
@@ -27,8 +27,8 @@ router.put(
   "/updateNewsById/:id",
   uploadImages.array("images", 10),
   isAuthenticated,
-  isHRAdmin,
+  isManager,
   updateNewsById
 );
-router.delete("/deleteNewsById/:id",isAuthenticated,isHRAdmin, deleteNewsById);
+router.delete("/deleteNewsById/:id",isAuthenticated,isManager, deleteNewsById);
 module.exports = router;

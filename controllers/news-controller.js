@@ -33,7 +33,6 @@ async function createNews(req, res) {
       images,
     });
     if (error) {
-      console.log("Having error...");
       return res.status(400).json({ error: error.details[0].message });
     }
     try {
@@ -72,10 +71,8 @@ async function createNews(req, res) {
     try {
         let news;
         if (req.user && req.user.role === 'employee') {
-        // If the user is an employee, fetch all news
         news = await News.find();
         } else {
-        // If the user is not an employee, fetch only news with for_all set to true
         news = await News.find({ for_all: true });
         }
   
@@ -98,7 +95,6 @@ async function createNews(req, res) {
     }
   }
   async function updateNewsById(req, res) {
-    console.log(req.body);
     const { id } = req.params;
     const { title, description,for_all } = req.body;
     const images = req.files;
@@ -114,7 +110,7 @@ async function createNews(req, res) {
     try {
       const uploader = async (path) => await cloudinary.uploads(path, "Images");
       if (req.method === "PUT") {
-        const urls = []; // Declare and initialize the urls array
+        const urls = [];
         console.log(req.files);
         const files = req.files;
         for (const file of files) {
@@ -151,9 +147,7 @@ async function createNews(req, res) {
   async function deleteNewsById(req, res) {
     try {
       const { id } = req.params;
-  
       const news = await News.findByIdAndDelete(id);
-  
       if (!news) {
         return res.status(404).json({ error: "News not found" });
       }
