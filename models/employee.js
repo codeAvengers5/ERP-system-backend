@@ -16,10 +16,15 @@ const employeeSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
+    default: "12345678",
   },
   enable2fa: {
     type: Boolean,
     required: false,
+    default: false,
+  },
+  is2faVerified: {
+    type: Boolean,
     default: false,
   },
   secrets2fa: {
