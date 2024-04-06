@@ -58,7 +58,7 @@ async function authorize() {
   return client;
 }
 
-async function checkIn(auth,res) {
+async function checkIn(auth) {
   const sheets = google.sheets({ version: 'v4', auth });
   const data = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
@@ -119,7 +119,7 @@ async function schedulePeriodicRead(auth) {
 async function performCheckIn(res) {
   try {
     const auth = await authorize();
-    await checkIn(auth,res);
+    await checkIn(auth);
     console.log('Check-in performed successfully.');
     schedulePeriodicRead(auth); 
     } catch (error) {
@@ -286,7 +286,7 @@ async function filterEmployeesByDate(req, res) {
 }
 async function getAttendanceCounts(req, res) {
   try {
-    const currentDate = moment('2024-04-01').startOf('day').toDate(); 
+    const currentDate = moment('').startOf('day').toDate(); 
     const employeeCounts = await Employee.countDocuments();
     const attendanceCounts = await Attendance.aggregate([
       {
