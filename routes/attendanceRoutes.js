@@ -7,5 +7,5 @@ router.get("/employeeattendanceinfo/:id",getAttendancefor_Employee)
 router.get("/searchemployee", isAuthenticated, isHRAdmin, searchEmployee);
 router.get("/filterbystatus", isAuthenticated, isHRAdmin, filterEmployeesByStatus);
 router.get("/filterbydate", isAuthenticated, isHRAdmin, filterEmployeesByDate);
-router.get("/getattendancecount",getAttendanceCounts)
+router.get("/getattendancecount",isAuthenticated,isHRAdmin,getAttendanceCounts)
 module.exports = router;
