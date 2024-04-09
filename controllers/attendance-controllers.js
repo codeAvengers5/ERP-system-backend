@@ -7,6 +7,7 @@ const process = require('process');
 const { authenticate } = require('@google-cloud/local-auth');
 const { google } = require('googleapis');
 const EmployeeInfo = require("../models/employeeInfo");
+const Role = require("../models/role");
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 const TOKEN_PATH = path.join(process.cwd(), 'helpers/token.json');
 const CREDENTIALS_PATH = path.join(process.cwd(), 'helpers/credentials.json');
@@ -135,13 +136,19 @@ async function fetchAttendanceInfo(req, res) {
 
       const employee = await Employee.findOne({ _id: employeeId }).exec();
       if (!employee) return res.status(404).json({ message: "Employee Not Found" });
-
+      const roleId = employee.role_id.toString();
+      const role = await Role.findOne({ _id: roleId });
+      if (!role) {
+        return res.status(404).json({ message: "Role Not Found" });
+      }
       const employeeInfo = await EmployeeInfo.findOne({ employee_id: employeeId }).exec();
       if (!employeeInfo) return res.status(404).json({ message: "Employee info not found" });
 
       res.status(200).json({
         employee: employee,
         employeeInfo:employeeInfo,
+        role: role,
+        arrivaltime: mostRecentDocument.attendanceHistory.check_in.getHours() * 60 + mostRecentDocument.attendanceHistory.check_in.getMinutes()
       });
     } else {
       console.log('No attendance records found.');
