@@ -22,7 +22,7 @@
     "express-session": "^1.18.0",
     "googleapis": "^134.0.0",
     "hi-base32": "^0.5.1",
-    "joi": "^17.12.2",
+    "joi": "^17.12.3",
     "jsonwebtoken": "^9.0.2",
     "moment": "^2.30.1",
     "mongoose": "^8.0.4",

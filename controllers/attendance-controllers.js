@@ -79,16 +79,64 @@ async function checkIn(auth) {
         throw new Error('Employee not found');
       }
       console.log(employee);
+
+      const currentDate = new Date();
+      const dayOfWeek = currentDate.getDay();
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // 0 = Sunday, 6 = Saturday
+      const calendar = google.calendar({ version: 'v3', auth });
+      const calendarEvents = await calendar.events.list({
+        calendarId: 'primary',
+        timeMin: currentDate.toISOString(),
+        timeMax: currentDate.toISOString(),
+        singleEvents: true,
+      });
+      const isHoliday = calendarEvents.data.items.length > 0;
+
       const attendance = await Attendance.findOne({
         employee_id: employee._id,
       });
-      if (!attendance) {
-        const newAttendance = new Attendance({
-          employee_id: employee._id,
-        });
-        await newAttendance.checkIn();
+      
+      if (!isWeekend && !isHoliday) {
+        if (!attendance) {
+          const newAttendance = new Attendance({
+            employee_id: employee._id,
+          });
+          await newAttendance.checkIn();
+
+          const event = {
+            summary: 'Check-in',
+            start: {
+              dateTime: new Date().toISOString(),
+            },
+            end: {
+              dateTime: new Date().toISOString(),
+            },
+            description: `Check-in recorded for ${employee.name}`,
+          };
+          await calendar.events.insert({
+            calendarId: 'primary',
+            resource: event,
+          });
+        } else {
+          await attendance.checkIn();
+        }
       } else {
-        await attendance.checkIn();
+        // If it's a weekend or holiday, record attendance as "No Record"
+        const attendanceRecord = {
+          date: currentDate,
+          check_in: null,
+          status: "No Record",
+        };
+        if (attendance) {
+          attendance.attendanceHistory.push(attendanceRecord);
+          await attendance.save();
+        } else {
+          const newAttendance = new Attendance({
+            employee_id: employee._id,
+            attendanceHistory: [attendanceRecord]
+          });
+          await newAttendance.save();
+        }
       }
     } catch (error) {
       console.error('Error fetching employee info:', error);
@@ -101,6 +149,7 @@ async function checkIn(auth) {
   });
   await storeIDs(rows.map(row => row[0]));
 }
+
 async function schedulePeriodicRead(auth) {
   setInterval(async () => {
     const currentDate = new Date();
@@ -130,7 +179,6 @@ async function performCheckIn(res) {
 async function fetchAttendanceInfo(req, res) {
   try {
     const mostRecentDocument = await Attendance.findOne().sort({ _id: -1 });
-
     if (mostRecentDocument) {
       const employeeId = mostRecentDocument.employee_id;
 
@@ -148,8 +196,9 @@ async function fetchAttendanceInfo(req, res) {
         employee: employee,
         employeeInfo:employeeInfo,
         role: role,
-        arrivaltime: mostRecentDocument.attendanceHistory.check_in.getHours() * 60 + mostRecentDocument.attendanceHistory.check_in.getMinutes()
+        arrivaltime: `${mostRecentDocument.attendanceHistory[0].check_in.getHours()}:${mostRecentDocument.attendanceHistory[0].check_in.getMinutes()}`
       });
+      
     } else {
       console.log('No attendance records found.');
       res.status(404).json({ message: "No attendance records found." });
