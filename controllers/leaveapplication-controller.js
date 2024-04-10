@@ -3,8 +3,31 @@ const LeaveApplication = require("../models/leaveApplication");
 async function createLeaveApplication(req, res) {
   try {
     const { full_name, duration, leave_date, detail } = req.body;
+    console.log("user",req.user.id);
     const employee_id = req.user.id; //employee_id
+     // Check if the user already has a pending leave request
+     const existingLeaveApplication = await LeaveApplication.findOne({
+      employee_id,
+      status: "pending"
+    });
+    
+    if (existingLeaveApplication) {
+      return res.status(400).json({ error: "You already have a pending leave request" });
+    }
     const employeeInfo = await EmployeeInfo.findOne({employee_id: employee_id});
+    // Check if the user has already been granted annual leave in the current year
+    const currentYear = new Date().getFullYear();
+    const existingAnnualLeave = await LeaveApplication.findOne({
+      employee_id,
+      detail: "annual"||"maternity",
+      status: "approved",
+      leave_date: { $gte: new Date(`${currentYear}-01-01`), $lte: new Date(`${currentYear}-12-31`) },
+    });
+
+    if (detail === "annual" && existingAnnualLeave) {
+      return res.status(400).json({ error: "You have already been granted annual leave this year" });
+    }
+
     const leaveApplication = new LeaveApplication({
       employee_id,
       position: employeeInfo.position,
@@ -61,18 +84,26 @@ async function getAllLeaveApplications_forHR(req, res) {
 }
 async function updateLeaveApplication(req, res) {
   try {
-    const { id } = req.params; //leaveappliction
+    const { id } = req.params; // leave application ID
     const { full_name, duration, leave_date, detail } = req.body;
 
-    const updatedApplication = await LeaveApplication.findByIdAndUpdate(id, {
-      full_name: full_name,
-      duration: duration,
-      leave_date: leave_date,
-      detail: detail,
-    });
-    if (!updatedApplication) {
+    const leaveApplication = await LeaveApplication.findById(id);
+
+    if (!leaveApplication) {
       return res.status(404).json({ message: "Leave application not found" });
     }
+
+    if (leaveApplication.status === "approved") {
+      return res.status(400).json({ error: "Cannot update an approved leave application" });
+    }
+
+    leaveApplication.full_name = full_name;
+    leaveApplication.duration = duration;
+    leaveApplication.leave_date = leave_date;
+    leaveApplication.detail = detail;
+
+    await leaveApplication.save();
+
     res.status(200).json({ message: "Leave application updated successfully" });
   } catch (error) {
     console.log(error);
@@ -99,11 +130,19 @@ async function updateStatus(req, res) {
 async function deleteLeaveApplication(req, res) {
   try {
     const { id } = req.params;
+    const leaveApplication = await LeaveApplication.findById(id);
+
+    if (!leaveApplication) {
+      return res.status(404).json({ message: "Leave application not found" });
+    }
+
+    if (leaveApplication.status === "approved") {
+      return res.status(400).json({ error: "Cannot delete an approved leave application" });
+    }
+
     if (req.user.role === "employee") {
       await LeaveApplication.findByIdAndDelete(id);
-      res
-        .status(200)
-        .json({ message: "Leave application deleted successfully" });
+      res.status(200).json({ message: "Leave application deleted successfully" });
     } else {
       return res.status(404).json({ message: "Not authorized" });
     }
