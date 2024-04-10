@@ -113,7 +113,7 @@ async function checkIn(auth) {
             },
             description: `Check-in recorded for ${employee.name}`,
           };
-          await calendar.events.insert({
+           calendar.events.insert({
             calendarId: 'primary',
             resource: event,
           });
@@ -125,7 +125,7 @@ async function checkIn(auth) {
         const attendanceRecord = {
           date: currentDate,
           check_in: null,
-          status: "No Record",
+          status: "No Record, It is a  Weekend or Holiday",
         };
         if (attendance) {
           attendance.attendanceHistory.push(attendanceRecord);
@@ -203,21 +203,6 @@ async function fetchAttendanceInfo(req, res) {
       console.log('No attendance records found.');
       res.status(404).json({ message: "No attendance records found." });
     }
-  } catch (error) {
-    console.error('Error fetching attendance:', error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-}
-async function getAttendancefor_Employee(req, res) {
-  try {
-    const { id } = req.params;
-    const attendanceInfo = await Attendance.findOne({ employee_id: id }).exec();
-
-    if (!attendanceInfo) {
-      return res.status(404).json({ message: "Record not found for this user" });
-    }
-
-    res.status(200).json({ attendanceInfo });
   } catch (error) {
     console.error('Error fetching attendance:', error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -302,11 +287,19 @@ async function filterEmployeesByStatus(req, res) {
   }
 }
 async function filterEmployeesByDate(req, res) {
-  const { date } = req.query;
+  const { date, userId } = req.query;
   try {
     const filterDate = new Date(date);
-    const attendanceInfo = await Attendance.find();
-    const filteredAttendance = attendanceInfo.filter((attendance) => {
+    let filteredAttendance;
+    let attendanceInfo;
+
+    if (userId) {
+      attendanceInfo = await Attendance.findOne({ employee_id: userId });
+    } else {
+      attendanceInfo = await Attendance.find();
+    }
+
+    filteredAttendance = attendanceInfo.filter((attendance) => {
       return attendance.attendanceHistory.some((entry) => {
         const entryDate = new Date(entry.date);
         return entryDate.toDateString() === filterDate.toDateString();
@@ -325,9 +318,10 @@ async function filterEmployeesByDate(req, res) {
         return {
           name: employee.full_name,
           email: employee.email,
-          date: attendance.attendanceHistory[0].date,
-          check_in: attendance.attendanceHistory[0].check_in,
-          status: attendance.attendanceHistory[0].status,
+          attendanceHistory: attendance.attendanceHistory.filter(entry => {
+            const entryDate = new Date(entry.date);
+            return entryDate.toDateString() === filterDate.toDateString();
+          }),
         };
       })
     );
@@ -340,6 +334,7 @@ async function filterEmployeesByDate(req, res) {
     return res.status(500).json({ error: "Internal server error" });
   }
 }
+
 async function getAttendanceCounts(req, res) {
   try {
     const currentDate = moment('').startOf('day').toDate(); 
