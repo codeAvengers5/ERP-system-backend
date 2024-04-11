@@ -4,8 +4,7 @@ async function createLeaveApplication(req, res) {
   try {
     const { full_name, duration, leave_date, detail } = req.body;
     console.log("user",req.user.id);
-    const employee_id = req.user.id; //employee_id
-     // Check if the user already has a pending leave request
+    const employee_id = req.user.id; 
      const existingLeaveApplication = await LeaveApplication.findOne({
       employee_id,
       status: "pending"
@@ -15,7 +14,6 @@ async function createLeaveApplication(req, res) {
       return res.status(400).json({ error: "You already have a pending leave request" });
     }
     const employeeInfo = await EmployeeInfo.findOne({employee_id: employee_id});
-    // Check if the user has already been granted annual leave in the current year
     const currentYear = new Date().getFullYear();
     const existingAnnualLeave = await LeaveApplication.findOne({
       employee_id,

@@ -91,8 +91,6 @@ async function getPolicyById(req, res) {
     res.status(500).json({ error: "Failed to fetch policy" });
   }
 }
-
-
 async function deletePolicyById(req, res) {
   try {
     const { id } = req.params;

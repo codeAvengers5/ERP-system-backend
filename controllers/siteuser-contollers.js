@@ -155,7 +155,6 @@ async function ForgotPassword(req, res, next) {
     }
   }
 }
-
 async function ResetPassword(req, res, next) {
   const { id, token } = req.params;
   const { password } = req.body;
