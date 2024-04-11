@@ -191,11 +191,13 @@ async function LoginAdminUser(req, res, next) {
     const accountId = account._id;
     const roleName = role.role_name;
     const enable2fa = account.enable2fa;
+    const email= account.email;
+    const full_name=account.full_name
     const payload = {
       id: accountId,
       role: roleName,
     };
-    const userInfo = { accountId, roleName, enable2fa };
+    const userInfo = { accountId, email,full_name,roleName, enable2fa };
     const token = await generateToken(payload);
     res.cookie("jwt", token, {
       httpOnly: true,
@@ -205,7 +207,7 @@ async function LoginAdminUser(req, res, next) {
     });
     res
       .status(200)
-      .json({ token: token, userInfo: userInfo, message: "LoggedIn" });
+      .json({ userInfo: userInfo, message: "LoggedIn" });
   } catch (error) {
     console.log("Login failed with error : ", error);
     return res.status(500).json({ Error: error });
