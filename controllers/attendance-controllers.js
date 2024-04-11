@@ -287,23 +287,26 @@ async function filterEmployeesByStatus(req, res) {
   }
 }
 async function filterEmployeesByDate(req, res) {
-  const { date, userId } = req.query;
   try {
+    const { date, userId } = req.query;
     const filterDate = new Date(date);
     let filteredAttendance;
     let attendanceInfo;
 
-    if (userId) {
+    if (userId !== "undefined") {
       attendanceInfo = await Attendance.findOne({ employee_id: userId });
     } else {
       attendanceInfo = await Attendance.find();
     }
 
-    filteredAttendance = attendanceInfo.filter((attendance) => {
-      return attendance.attendanceHistory.some((entry) => {
-        const entryDate = new Date(entry.date);
-        return entryDate.toDateString() === filterDate.toDateString();
-      });
+    filteredAttendance = Object.values(attendanceInfo).filter((attendance) => {
+      if (Array.isArray(attendance.attendanceHistory)) {
+        return attendance.attendanceHistory.some((entry) => {
+          const entryDate = new Date(entry.date);
+          return entryDate.toDateString() === filterDate.toDateString();
+        });
+      }
+      return false;
     });
 
     if (filteredAttendance.length === 0) {
