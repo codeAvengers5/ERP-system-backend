@@ -235,51 +235,64 @@ async function searchEmployee(req, res) {
 }
 async function filterEmployeesByStatus(req, res) {
   try {
-    const { status } = req.query;
-    const attendanceInfo = await Attendance.find();
-    if(!status){
-      attendanceWithEmployeeInfo = await Promise.all(
-       attendanceInfo.map(async (attendance) => {
-         const employee = await Employee.findById(attendance.employee_id);
-         return {
-           name: employee.full_name,
-           email: employee.email,
-           date: attendance.attendanceHistory[0].date,
-           check_in: attendance.attendanceHistory[0].check_in,
-           status: attendance.attendanceHistory[0].status,
-         };
-       })
-     );
-   }
-   else{
+    const { status, date } = req.query;
+
+    let attendanceInfo = await Attendance.find({});
+
+    const filterDate = new Date(date);
     const filteredAttendance = attendanceInfo.filter((attendance) => {
       return attendance.attendanceHistory.some((entry) => {
-        return entry.status === status;
+        const entryDate = new Date(entry.date);
+        return entryDate.toDateString() === filterDate.toDateString();
       });
     });
+
     if (filteredAttendance.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "No attendance info found for employees on this date" });
+    }
+
+    const attendanceWithEmployeeInfo = await Promise.all(
+      filteredAttendance.map(async (attendance) => {
+        const employee = await Employee.findById(attendance.employee_id);
+
+        const filteredHistory = attendance.attendanceHistory
+          .filter((entry) => {
+            const entryDate = new Date(entry.date);
+            return entryDate.toDateString() === filterDate.toDateString();
+          })
+          .filter((entry) => !status || entry.status === status)
+          .map((entry) => {
+            const { date, check_in, status: entryStatus } = entry;
+
+            return {
+              date,
+              check_in,
+              status: entryStatus,
+            };
+          });
+
+        return {
+          name: employee.full_name,
+          email: employee.email,
+          attendanceHistory: filteredHistory,
+        };
+      })
+    );
+
+    const filteredAttendanceWithEmployeeInfo = attendanceWithEmployeeInfo.filter(
+      Boolean
+    );
+
+    if (filteredAttendanceWithEmployeeInfo.length === 0) {
       return res.status(404).json({
         error: "No attendance info found for employees with this status",
       });
     }
-    attendanceWithEmployeeInfo = await Promise.all(
-     filteredAttendance.map(async (attendance) => {
-       const employee = await Employee.findById(attendance.employee_id);
-       return {
-         name: employee.full_name,
-         email: employee.email,
-         date: attendance.attendanceHistory[0].date,
-         check_in: attendance.attendanceHistory[0].check_in,
-         status: attendance.attendanceHistory[0].status,
-       };
-     })
-   );
-   }
 
-    
-   
     return res.status(200).json({
-      attendanceInfo: attendanceWithEmployeeInfo,
+      attendanceInfo: filteredAttendanceWithEmployeeInfo,
     });
   } catch (error) {
     console.error("Error filtering employees by status:", error);
@@ -337,7 +350,6 @@ async function filterEmployeesByDate(req, res) {
     return res.status(500).json({ error: "Internal server error" });
   }
 }
-
 async function getAttendanceCounts(req, res) {
   try {
     const currentDate = moment('').startOf('day').toDate(); 

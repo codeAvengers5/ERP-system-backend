@@ -10,8 +10,6 @@ const cloudinary = require("../config/coludinary");
 const generateToken = require("../middleware/generateToken");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
-const Printer = require("node-thermal-printer").printer;
-const printerTypes = require("node-thermal-printer").types;
 const { sendRestPasswordLink } = require("../helpers/sendConfirmationEmail");
 const generateBarcode = require("../helpers/generateBarcode");
 const registerValidator = joi.object({
@@ -133,9 +131,7 @@ async function RegisterAdminUser(req, res, next) {
         const roleId = role._id;
         employee.role_id = roleId;
         await employee.save();
-        // Generate the barcode for the employee
         const barcode = await generateBarcode(employeeId.toString());
-
         const employeeInfo = await EmployeeInfo.create({
           employee_id: employeeId,
           email,
