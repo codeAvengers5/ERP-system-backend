@@ -26,7 +26,7 @@ router.put(
   isEmployee,
   UpdateEmployeeInfo
 );
-router.get("/users", isAuthenticated, isItAdmin, GetAllUsers);
+router.get("/users", GetAllUsers);
 router.get("/getemployee/:id",isAuthenticated,isItAdmin,FetchById);
 router.post("/printid", isAuthenticated, isItAdmin, PrintID);
 module.exports = router;

@@ -31,6 +31,15 @@ const appointedEventSchema = new mongoose.Schema({
     default:null,
     required:true,
   },
+  paymentStatus: {
+    type: String,
+    enum: ["pending", "completed"],
+    default: "pending",
+  },
+  txRef: {
+    type: String,
+    required: true,
+  },
   user_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
