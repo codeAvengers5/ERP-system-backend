@@ -19,8 +19,8 @@ router.post(
   createNews
 );
 router.get("/searchnews", searchNews);
-router.get("/getnewsadmin", isAuthenticated, getAllNews);
-router.get("/getAllNews", getAllNews);
+router.get("/getAllNews", isAuthenticated, getAllNews);
+router.get("/getAllNewsuser", getAllNews);
 router.get("/getNewsById/:id", getNewsById);
 router.put(
   "/updateNewsById/:id",
