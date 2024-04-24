@@ -1,5 +1,4 @@
 const AppointedEvent = require("../models/appointedEvent");
-// const nanoid = require("nanoid");
 const nanoid = require('uuid')
 async function createAppointment(req, res) {
   try {
