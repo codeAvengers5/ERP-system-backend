@@ -46,7 +46,7 @@ connectDB()
       const currentDate = new Date();
       const currentHour = currentDate.getHours();
   
-      if (currentHour >= 18 && currentHour < 21) {
+      if (currentHour >= 18 && currentHour < 10) {
         performCheckIn(res);
       } else {
         console.log('Outside the desired range. Skipping check-in.');
