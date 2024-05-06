@@ -1,10 +1,6 @@
 const mongoose = require('mongoose');
 
 const appointedEventSchema = new mongoose.Schema({
-  payment_id: {
-    type: String,
-    required: true,
-  },
   no_of_ppl: {
     type: Number,
     required: true,
@@ -13,9 +9,9 @@ const appointedEventSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  specification: {
-    type: String,
-    required: true,
+  fasting: {
+    type: Boolean,
+    default: false,
   },
   phone_no: {
     type: String,
@@ -25,10 +21,15 @@ const appointedEventSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  employee_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Employee',
-    required: true,
+  food_time:{
+    type:String,
+    enum: ["Breakfast", "Lunch", "Dinner"],
+    default: "Lunch",
+  },
+  with_cash:{
+    type:Boolean,
+    default:null,
+    required:true,
   },
   user_id: {
     type: mongoose.Schema.Types.ObjectId,

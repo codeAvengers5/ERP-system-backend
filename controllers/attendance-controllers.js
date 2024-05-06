@@ -387,4 +387,4 @@ async function getAttendanceCounts(req, res) {
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
-module.exports = { performCheckIn,searchEmployee,filterEmployeesByDate,filterEmployeesByStatus,fetchAttendanceInfo,getAttendancefor_Employee, getAttendanceCounts };
+module.exports = { performCheckIn,searchEmployee,filterEmployeesByDate,filterEmployeesByStatus,fetchAttendanceInfo,getAttendanceCounts };
