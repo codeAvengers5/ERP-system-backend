@@ -20,7 +20,7 @@ async function isAuthenticated(req, res, next) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_TOKEN_KEY);
     req.user = decoded;
-    const user = await Employee.findOne({ _id: decoded.userId });
+    const user = await Employee.findOne({ _id: decoded.id });
     if (!user) {
       return res.status(404).json({
         success: false,

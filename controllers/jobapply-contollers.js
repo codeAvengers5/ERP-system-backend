@@ -4,6 +4,8 @@ const JobSummary = require("../models/jobSummary");
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 const dotenv = require("dotenv");
+const Role = require("../models/role");
+const SiteUserNotification = require("../models/siteuserNotification");
 dotenv.config();
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
@@ -101,9 +103,12 @@ async function JobApply(req, res) {
           message: "You have Successfully applied to the job application",
           value: { appliedUser },
         });
+        const job = JobPost.find({ job_id });
+        const hr = await Role.findOne({ role_name: "hradmin" });
         const notification = new Notification({
           recipient: "hradmin",
-          message: `${appliedUser.full_name} has been applied to job application  `,
+          message: `${appliedUser.full_name} has been applied to ${job.title} application`,
+          employee_id: hr.employee_id,
         });
         await notification.save();
       }
@@ -142,9 +147,13 @@ async function StatusChange(req, res) {
         return res.status(200).json({ message: "Job summary deleted" });
       }
     }
-
+    res.status(200).json(jobSummary);
     await jobSummary.save();
-    return res.status(200).json(jobSummary);
+    const notification = new SiteUserNotification({
+      userId: jobSummary.user_id,
+      message: `You Application has been ${jobSummary.status}`,
+    });
+    await notification.save();
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal server error" });

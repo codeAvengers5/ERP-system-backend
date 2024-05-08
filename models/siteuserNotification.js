@@ -2,8 +2,9 @@ const mongoose = require("mongoose");
 
 const notificationSchema = new mongoose.Schema(
   {
-    recipient: {
-      type: String,
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true,
     },
     message: {
@@ -14,19 +15,15 @@ const notificationSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    employee_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Employee",
-      required: true,
-      unique: true,
-    },
   },
-
   {
     timestamp: true,
   }
 );
 
-const Notification = mongoose.model("Notification", notificationSchema);
+const SiteUserNotification = mongoose.model(
+  "SiteUserNotification",
+  notificationSchema
+);
 
-module.exports = Notification;
+module.exports = SiteUserNotification;

@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const Employee = require("../models/employee");
 const Role = require("../models/role");
 const EmployeeInfo = require("../models/employeeInfo");
+const Notification = require("../models/notification");
 const hashPassword = require("../middleware/hashPassword");
 const fs = require("fs");
 const bcrypt = require("bcryptjs");
@@ -62,7 +63,7 @@ const passwordSchema = joi
     new RegExp(
       "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$"
     )
-  ) // At least one lowercase letter, one uppercase letter, one digit, and one special character
+  )
   .required();
 async function RegisterAdminUser(req, res, next) {
   const {
@@ -155,6 +156,25 @@ async function RegisterAdminUser(req, res, next) {
           message: "Employee account created successfully",
           value: { employeeInfo },
         });
+        const hr = await Role.findOne({ role_name: "hradmin" });
+        const manager = await Role.findOne({ role_name: "manager" });
+
+        const notifications = [];
+        const hrNotification = new Notification({
+          recipient: "hradmin",
+          message: `New Employee has been created ${employee.full_name}`,
+          employee_id: hr.employee_id,
+        });
+        notifications.push(hrNotification);
+        const managerNotification = new Notification({
+          recipient: "manager",
+          message: `New Employee has been created ${employee.full_name}`,
+          employee_id: manager.employee_id,
+        });
+        notifications.push(managerNotification);
+        for (const notification of notifications) {
+          await notification.save();
+        }
       }
     } else {
       return res.status(405).json({
@@ -187,13 +207,13 @@ async function LoginAdminUser(req, res, next) {
     const accountId = account._id;
     const roleName = role.role_name;
     const enable2fa = account.enable2fa;
-    const email= account.email;
-    const full_name=account.full_name
+    const email = account.email;
+    const full_name = account.full_name;
     const payload = {
       id: accountId,
       role: roleName,
     };
-    const userInfo = { accountId, email,full_name,roleName, enable2fa };
+    const userInfo = { accountId, email, full_name, roleName, enable2fa };
     const token = await generateToken(payload);
     res.cookie("jwt", token, {
       httpOnly: true,
@@ -201,9 +221,7 @@ async function LoginAdminUser(req, res, next) {
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    res
-      .status(200)
-      .json({ userInfo: userInfo, message: "LoggedIn" });
+    res.status(200).json({ userInfo: userInfo, message: "LoggedIn" });
   } catch (error) {
     console.log("Login failed with error : ", error);
     return res.status(500).json({ Error: error });
@@ -370,7 +388,6 @@ async function LogoutAdminUser(req, res, next) {
   }
 }
 
-
 module.exports = {
   RegisterAdminUser,
   LoginAdminUser,
@@ -381,4 +398,3 @@ module.exports = {
   Verify2FA,
   LogoutAdminUser,
 };
-
