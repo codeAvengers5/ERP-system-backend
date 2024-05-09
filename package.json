@@ -34,6 +34,7 @@
     "path": "^0.12.7",
     "process": "^0.11.10",
     "qrcode": "^1.5.3",
+    "socket.io": "^4.7.5",
     "speakeasy": "^2.0.0"
   },
   "devDependencies": {

@@ -2,6 +2,8 @@ const Promotion = require("../models/promotion");
 const joi = require("joi");
 const cloudinary = require("../config/coludinary");
 const fs = require("fs");
+const User = require("../models/user");
+const SiteUserNotification = require("../models/siteuserNotification");
 const promotionValidator = joi.object({
   title: joi.string().required(),
   description: joi.string().required(),
@@ -55,6 +57,18 @@ async function createPromotion(req, res) {
       res.status(201).json({
         message: "Promotion created successfully",
       });
+      const users = await User.find();
+      const notificationsuser = [];
+      for (const user of users) {
+        const newsNotification = new SiteUserNotification({
+          message: `New promotion is avaiable ${promotion.title}`,
+          userId: user._id,
+        });
+        notificationsuser.push(newsNotification);
+      }
+      for (const notification of notificationsuser) {
+        await notification.save();
+      }
     } else {
       return res.status(405).json({
         err: `${req.method} method not allowed`,

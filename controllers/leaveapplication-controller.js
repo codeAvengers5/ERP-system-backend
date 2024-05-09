@@ -1,29 +1,38 @@
 const EmployeeInfo = require("../models/employeeInfo");
 const LeaveApplication = require("../models/leaveApplication");
+const Notification = require("../models/notification");
+const Role = require("../models/role");
 async function createLeaveApplication(req, res) {
   try {
     const { full_name, duration, leave_date, detail } = req.body;
-    console.log("user",req.user.id);
-    const employee_id = req.user.id; 
-     const existingLeaveApplication = await LeaveApplication.findOne({
+    const employee_id = req.user.id;
+    const existingLeaveApplication = await LeaveApplication.findOne({
       employee_id,
-      status: "pending"
+      status: "pending",
     });
-    
     if (existingLeaveApplication) {
-      return res.status(400).json({ error: "You already have a pending leave request" });
+      return res
+        .status(400)
+        .json({ error: "You already have a pending leave request" });
     }
-    const employeeInfo = await EmployeeInfo.findOne({employee_id: employee_id});
+    const employeeInfo = await EmployeeInfo.findOne({
+      employee_id: employee_id,
+    });
     const currentYear = new Date().getFullYear();
     const existingAnnualLeave = await LeaveApplication.findOne({
       employee_id,
-      detail: "annual"||"maternity",
+      detail: "annual" || "maternity",
       status: "approved",
-      leave_date: { $gte: new Date(`${currentYear}-01-01`), $lte: new Date(`${currentYear}-12-31`) },
+      leave_date: {
+        $gte: new Date(`${currentYear}-01-01`),
+        $lte: new Date(`${currentYear}-12-31`),
+      },
     });
 
     if (detail === "annual" && existingAnnualLeave) {
-      return res.status(400).json({ error: "You have already been granted annual leave this year" });
+      return res.status(400).json({
+        error: "You have already been granted annual leave this year",
+      });
     }
 
     const leaveApplication = new LeaveApplication({
@@ -37,6 +46,13 @@ async function createLeaveApplication(req, res) {
     });
     await leaveApplication.save();
     res.status(201).json({ message: "Leave application created successfully" });
+    const hr = await Role.findOne({ role_name: "hradmin" });
+    const notification = new Notification({
+      recipient: "hradmin",
+      message: `${leaveApplication.full_name} is asking for Leave`,
+      employee_id: hr.employee_id,
+    });
+    await notification.save();
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal server error" });
@@ -92,7 +108,9 @@ async function updateLeaveApplication(req, res) {
     }
 
     if (leaveApplication.status === "approved") {
-      return res.status(400).json({ error: "Cannot update an approved leave application" });
+      return res
+        .status(400)
+        .json({ error: "Cannot update an approved leave application" });
     }
 
     leaveApplication.full_name = full_name;
@@ -119,7 +137,13 @@ async function updateStatus(req, res) {
     leaveApplication.status = status;
     await leaveApplication.save();
 
-    return res.status(200).json(leaveApplication);
+    res.status(200).json(leaveApplication);
+    const notification = new Notification({
+      recipient: "employee",
+      message: `Your Application has been ${leaveApplication.status}`,
+      employee_id: leaveApplication.employee_id,
+    });
+    await notification.save();
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal server error" });
@@ -135,12 +159,16 @@ async function deleteLeaveApplication(req, res) {
     }
 
     if (leaveApplication.status === "approved") {
-      return res.status(400).json({ error: "Cannot delete an approved leave application" });
+      return res
+        .status(400)
+        .json({ error: "Cannot delete an approved leave application" });
     }
 
     if (req.user.role === "employee") {
       await LeaveApplication.findByIdAndDelete(id);
-      res.status(200).json({ message: "Leave application deleted successfully" });
+      res
+        .status(200)
+        .json({ message: "Leave application deleted successfully" });
     } else {
       return res.status(404).json({ message: "Not authorized" });
     }

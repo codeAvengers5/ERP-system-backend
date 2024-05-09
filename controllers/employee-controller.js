@@ -3,6 +3,7 @@ const Role = require("../models/role");
 const EmployeeInfo = require("../models/employeeInfo");
 const fs = require("fs");
 const cloudinary = require("../config/coludinary");
+const { PrinterTypes } = require("node-thermal-printer");
 
 async function GetAllUsers(req, res, next) {
   try {
@@ -174,7 +175,7 @@ async function PrintID(req, res, next) {
   try {
     const printerName = "Your Printer Name"; // Replace with the name of your printer
 
-    const printer = new Printer({
+    const printer = new PrinterTypes({
       type: printerTypes.EPSON, // Replace with the appropriate printer type
       characterSet: "SLOVENIA", // Replace with the appropriate character set
       interface: `printer:${printerName}`, // Specify the printer name as the interface
