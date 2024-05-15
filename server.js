@@ -12,6 +12,7 @@ const policyRoutes = require("./routes/policyRoutes");
 const newsRoute = require("./routes/newsRoutes");
 const employeeReport = require("./routes/reportRoutes.js");
 const notificationRoute = require("./routes/notificationRoute.js");
+const contactusRoute = require("./routes/contactusRoutes.js");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const { performCheckIn } = require("./controllers/attendance-controllers.js");
@@ -42,6 +43,7 @@ app.use(newsRoute);
 app.use(policyRoutes);
 app.use(employeeReport);
 app.use(notificationRoute);
+app.use(contactusRoute);
 connectDB()
   .then(() => {
     server.listen(process.env.PORT, (req, res) => {

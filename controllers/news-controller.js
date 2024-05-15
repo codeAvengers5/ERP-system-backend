@@ -55,7 +55,6 @@ const sendUserNotification = async (news) => {
     await notification.save();
   }
 };
-
 async function createNews(req, res) {
   const { title, for_all, description } = req.body;
   const images = req.files;
