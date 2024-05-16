@@ -333,6 +333,75 @@ async function getTotalAttendees(req, res) {
     console.error(error);
   }
 }
+async function getEmployeeDemographics(req, res) {
+  try {
+    const ageCount = await EmployeeInfo.aggregate([
+      {
+        $match: {
+          dob: { $exists: true, $ne: null }
+        }
+      },
+      {
+        $project: {
+          age: {
+            $subtract: [
+              { $year: new Date() },
+              { $year: "$dob" }
+            ]
+          }
+        }
+      },
+      {
+        $group: {
+          _id: "$age",
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { _id: 1 }
+      }
+    ]);
+const genderCount = await EmployeeInfo.aggregate([
+      {
+        $group: {
+          _id: "$gender",
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          gender: "$_id",
+          count: 1,
+          _id: 0
+        }
+      }
+    ]);
+const positionCount = await EmployeeInfo.aggregate([
+      {
+        $group: {
+          _id: "$position",
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          position: "$_id",
+          count: 1,
+          _id: 0
+        }
+      }
+    ]);
+
+    res.status(200).json({
+      ageCount,
+      genderCount,
+      positionCount
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
 
 module.exports = {
   getEmployeeCountByYear,
@@ -344,4 +413,5 @@ module.exports = {
   getEventHeldReport,
   getEventAnalytics,
   getTotalAttendees,
+  getEmployeeDemographics
 };
