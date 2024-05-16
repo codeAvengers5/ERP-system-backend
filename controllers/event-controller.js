@@ -1,5 +1,6 @@
 const AppointedEvent = require("../models/appointedEvent");
-const nanoid = require('uuid')
+const nanoid = require("uuid");
+const Payment = require("../models/payment");
 async function createAppointment(req, res) {
   try {
     const {
@@ -24,44 +25,8 @@ async function createAppointment(req, res) {
     };
 
     const appointment = new AppointedEvent(appointmentData);
-    const savedAppointment = await appointment.save();
-    const txRef = nanoid();
-    let price;
-    if (with_cash) {
-      if (fasting) {
-        price = no_of_ppl * 45;
-      } else {
-        price = no_of_ppl * 75;
-      }
-      let chapaRequestData = {
-        amount: price,
-        tx_ref: txRef,
-        currency: "ETB",
-        return_url: `https://api.chapa.co/v1/transaction/verify/${txRef}`,
-      };
-      const response = await axios.post(
-        `https://api.chapa.co/v1/transaction/initialize`,
-        chapaRequestData,
-        {
-          headers: {
-            Authorization: "Bearer " + process.env.CHAPA_KEY,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (response.data["status"] == "success") {
-        return res.json({
-          msg: "Successful",
-          paymentUrl: response.data["data"]["checkout_url"],
-        });
-      } else {
-        return res.status(500).json({
-          msg: "Something went wrong",
-        });
-      }
-    }
-
-    res.status(201).json(savedAppointment);
+    await appointment.save();
+    res.status(201).json(appointment);
   } catch (error) {
     res.status(500).json({ error: "Failed to create appointment" });
   }
