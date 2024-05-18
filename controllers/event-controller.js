@@ -48,6 +48,20 @@ async function getAppointment(req, res) {
     res.status(500).json({ error: "Failed to get appointment" });
   }
 }
+async function getUserAppointment(req, res) {
+  try {
+    const userId = req.params.id;
+    const appointment = await AppointedEvent.findById({ user_id: userId });
+
+    if (!appointment) {
+      return res.status(404).json({ error: "Appointment not found" });
+    }
+
+    res.json(appointment);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to get appointment" });
+  }
+}
 async function getAllAppointment(req, res) {
   try {
     const appointments = await AppointedEvent.find();
@@ -65,6 +79,10 @@ async function updateAppointment(req, res) {
   try {
     const appointmentId = req.params.id;
     const updateData = req.body;
+    const event = AppointedEvent.findById(appointmentId);
+    if (event.paymentStatus == "completed") {
+      res.status(401).json({ msg: "Can not update" });
+    }
     const updatedAppointment = await AppointedEvent.findByIdAndUpdate(
       appointmentId,
       updateData,
@@ -83,7 +101,10 @@ async function updateAppointment(req, res) {
 async function deleteAppointment(req, res) {
   try {
     const appointmentId = req.params.id;
-
+    const event = AppointedEvent.findById(appointmentId);
+    if (event.paymentStatus == "completed") {
+      res.status(401).json({ msg: "Can not delete" });
+    }
     const deletedAppointment = await AppointedEvent.findByIdAndDelete(
       appointmentId
     );
@@ -98,10 +119,10 @@ async function deleteAppointment(req, res) {
   }
 }
 
-
 module.exports = {
   createAppointment,
   getAppointment,
+  getUserAppointment,
   updateAppointment,
   deleteAppointment,
   getAllAppointment,
