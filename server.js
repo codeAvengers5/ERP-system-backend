@@ -16,9 +16,13 @@ const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const { performCheckIn } = require("./controllers/attendance-controllers.js");
 require("dotenv").config();
+const corsOptions = {
+  origin: 'http://localhost:3000', // specify the origin here
+  credentials: true, // allow credentials
+};
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(cookieParser());
 app.get("/", (req, res) => {
   res.send("welcome");
@@ -48,7 +52,7 @@ function schedulePeriodicCheckIns(res) {
     const currentDate = new Date();
     const currentHour = currentDate.getHours();
 
-    if (currentHour >= 18 && currentHour < 21) {
+    if (currentHour >= 20 && currentHour < 21) {
       performCheckIn(res);
     } else {
       console.log("Outside the desired range. Skipping check-in.");
