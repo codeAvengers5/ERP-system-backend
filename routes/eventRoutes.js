@@ -9,7 +9,7 @@ const {
 const { isUserAuthenticated } = require("../middleware/auth-user");
 const { isHRAdmin, isAuthenticated } = require("../middleware/auth");
 const router = express.Router();
-router.post("/createEvent", createAppointment);
+router.post("/createEvent", isUserAuthenticated, createAppointment);
 router.get("/getEvent/:id", isUserAuthenticated, getAppointment);
 router.get("getAllEvents", isAuthenticated, isHRAdmin, getAllAppointment);
 router.put("/updateEvent/:id", isUserAuthenticated, updateAppointment);
