@@ -105,6 +105,21 @@ async function createNews(req, res) {
     res.status(500).json({ error: error });
   }
 }
+async function searchNews(req, res) {
+  const { title } = req.query;
+  try {
+    const news = await News.find({
+      title: { $regex: `^${title}`, $options: "i" },
+      for_all: true,
+    });
+    return res.status(200).json({
+      news: news,
+    });
+  } catch (error) {
+    console.error("Error searching news:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
 async function getAllNews(req, res) {
   try {
     let news;
@@ -201,4 +216,5 @@ module.exports = {
   getNewsById,
   getAllNews,
   createNews,
+  searchNews,
 };
