@@ -62,7 +62,7 @@ function schedulePeriodicCheckIns(res) {
     const currentDate = new Date();
     const currentHour = currentDate.getHours();
 
-    if (currentHour >= 6 && currentHour < 9) {
+    if (currentHour >= 10 && currentHour < 21) {
       performCheckIn(res);
     } else {
       console.log("Outside the desired range. Skipping check-in.");
