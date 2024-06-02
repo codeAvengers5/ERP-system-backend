@@ -8,8 +8,6 @@ const { authenticate } = require('@google-cloud/local-auth');
 const { google } = require('googleapis');
 const EmployeeInfo = require("../models/employeeInfo");
 const Role = require("../models/role");
-const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
-const TOKEN_PATH = path.join(process.cwd(), 'helpers/token.json');
 const CREDENTIALS_PATH = path.join(process.cwd(), 'helpers/credentials.json');
 const SPREADSHEET_ID = '15v_s9gD7WoodxW7nzRsaHfvYnLzX0EjRsydju7h1FAw';
 const RANGE = 'Sheet1!A1:A';
@@ -21,9 +19,9 @@ async function storeIDs(ids) {
   storedIDs = ids;
 }
 
-async function loadSavedCredentialsIfExist() {
+async function loadSavedCalendarCredentialsIfExist() {
   try {
-    const content = await fs.readFile(TOKEN_PATH);
+    const content = await fs.readFile(path.join(process.cwd(), 'helpers/calendar-token.json'));
     const credentials = JSON.parse(content);
     return google.auth.fromJSON(credentials);
   } catch (err) {
@@ -31,7 +29,17 @@ async function loadSavedCredentialsIfExist() {
   }
 }
 
-async function saveCredentials(client) {
+async function loadSavedSheetsCredentialsIfExist() {
+  try {
+    const content = await fs.readFile(path.join(process.cwd(), 'helpers/token.json'));
+    const credentials = JSON.parse(content);
+    return google.auth.fromJSON(credentials);
+  } catch (err) {
+    return null;
+  }
+}
+
+async function saveCalendarCredentials(client) {
   const content = await fs.readFile(CREDENTIALS_PATH);
   const keys = JSON.parse(content);
   const key = keys.installed || keys.web;
@@ -41,26 +49,58 @@ async function saveCredentials(client) {
     client_secret: key.client_secret,
     refresh_token: client.credentials.refresh_token,
   });
-  await fs.writeFile(TOKEN_PATH, payload);
+  await fs.writeFile(path.join(process.cwd(), 'helpers/calendar-token.json'), payload);
 }
 
-async function authorize() {
-  let client = await loadSavedCredentialsIfExist();
+async function saveSheetsCredentials(client) {
+  const content = await fs.readFile(CREDENTIALS_PATH);
+  const keys = JSON.parse(content);
+  const key = keys.installed || keys.web;
+  const payload = JSON.stringify({
+    type: 'authorized_user',
+    client_id: key.client_id,
+    client_secret: key.client_secret,
+    refresh_token: client.credentials.refresh_token,
+  });
+  await fs.writeFile(path.join(process.cwd(), 'helpers/token.json'), payload);
+}
+async function authorizeCalendar() {
+  let client = await loadSavedCalendarCredentialsIfExist();
   if (client) {
     return client;
   }
   client = await authenticate({
-    scopes: SCOPES,
+    scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
     keyfilePath: CREDENTIALS_PATH,
   });
   if (client.credentials) {
-    await saveCredentials(client);
+    await saveCalendarCredentials(client);
   }
   return client;
 }
 
-async function checkIn(auth) {
-  const sheets = google.sheets({ version: 'v4', auth });
+async function authorizeSheets() {
+  let client = await loadSavedSheetsCredentialsIfExist();
+  if (client) {
+    return client;
+  }
+  client = await authenticate({
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    keyfilePath: CREDENTIALS_PATH,
+  });
+  if (client.credentials) {
+    await saveSheetsCredentials(client);
+  }
+  return client;
+}
+
+async function checkIn() {
+  const auth = await authorizeSheets();
+  const calendarAuth = await authorizeCalendar();
+
+  const sheets = google.sheets({ version: 'v4', auth: auth });
+  const calendar = google.calendar({ version: 'v3', auth: calendarAuth });
+
   const data = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
     range: RANGE,
@@ -70,6 +110,7 @@ async function checkIn(auth) {
     console.log('No data found.');
     return;
   }
+  console.log("hghgh",rows)
   const storedIDs = await getStoredIDs();
   const newIDs = rows.map(row => row[0]).filter(id => !storedIDs.includes(id));
   for (const newID of newIDs) {
@@ -78,18 +119,18 @@ async function checkIn(auth) {
       if (!employee) {
         throw new Error('Employee not found');
       }
-      console.log(employee);
+      console.log("employee",employee);
 
       const currentDate = new Date();
       const dayOfWeek = currentDate.getDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // 0 = Sunday, 6 = Saturday
-      const calendar = google.calendar({ version: 'v3', auth });
       const calendarEvents = await calendar.events.list({
         calendarId: 'primary',
         timeMin: currentDate.toISOString(),
         timeMax: currentDate.toISOString(),
         singleEvents: true,
       });
+      console.log("events",calendarEvents);
       const isHoliday = calendarEvents.data.items.length > 0;
 
       const attendance = await Attendance.findOne({
@@ -125,11 +166,12 @@ async function checkIn(auth) {
         const attendanceRecord = {
           date: currentDate,
           check_in: null,
-          status: "No Record, It is a  Weekend or Holiday",
+          status: "Weekend/Holiday",
         };
         if (attendance) {
           attendance.attendanceHistory.push(attendanceRecord);
           await attendance.save();
+          console.log("attendnance recorded");
         } else {
           const newAttendance = new Attendance({
             employee_id: employee._id,
@@ -143,20 +185,26 @@ async function checkIn(auth) {
       throw error;
     }
   }
-  await sheets.spreadsheets.values.clear({
-    spreadsheetId: SPREADSHEET_ID,
-    range: RANGE,
-  });
-  await storeIDs(rows.map(row => row[0]));
+  try {
+    await sheets.spreadsheets.values.clear({
+      auth,
+      spreadsheetId: SPREADSHEET_ID,
+      range: RANGE,
+    });
+    console.log("Spreadsheet cleared successfully");
+    await storeIDs(rows.map((row) => row[0]));
+  } catch (error) {
+    console.error("Error fetching employee info:", error);
+  }
+  
 }
-
 async function schedulePeriodicRead(auth) {
   setInterval(async () => {
     const currentDate = new Date();
     const currentHour = currentDate.getHours();
-    if (currentHour >= 18 && currentHour < 21) {
+    if (currentHour >= 8 && currentHour < 18) {
       try {
-        await checkIn(auth);
+        await checkIn();
         console.log('Reading from spreadsheet...');
       } catch (error) {
         console.error('Error reading from spreadsheet:', error);
@@ -168,8 +216,9 @@ async function schedulePeriodicRead(auth) {
 }
 async function performCheckIn(res) {
   try {
-    const auth = await authorize();
-    await checkIn(auth);
+    const auth = await authorizeSheets();
+    // await checkIn(auth);
+    await checkIn();
     console.log('Check-in performed successfully.');
     schedulePeriodicRead(auth); 
     } catch (error) {
