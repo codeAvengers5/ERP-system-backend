@@ -76,6 +76,7 @@ async function RegisterAdminUser(req, res, next) {
     start_date,
     salary,
     gender,
+    phone_no,
   } = req.body;
   const images = req.files["images"];
   const image_profile = req.files["image_profile"];
@@ -91,6 +92,7 @@ async function RegisterAdminUser(req, res, next) {
     gender,
     images,
     image_profile,
+    phone_no,
   });
 
   if (error) {
@@ -141,6 +143,7 @@ async function RegisterAdminUser(req, res, next) {
           start_date,
           salary,
           gender,
+          phone_no,
           images: urls,
           image_profile: urls_pic,
           barcode: barcode,

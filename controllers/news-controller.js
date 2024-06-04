@@ -4,6 +4,7 @@ const cloudinary = require("../config/coludinary");
 const fs = require("fs");
 const Employee = require("../models/employee");
 const SiteUserNotification = require("../models/siteuserNotification");
+const Notification = require("../models/notification");
 const User = require("../models/user");
 const newsValidator = joi.object({
   title: joi.string().required(),
@@ -64,6 +65,7 @@ async function createNews(req, res) {
     for_all,
     images,
   });
+  console.log("req",req.body);
   if (error) {
     return res.status(400).json({ error: error.details[0].message });
   }
@@ -157,6 +159,7 @@ async function updateNewsById(req, res) {
     for_all,
     images,
   });
+  console.log("req",req.body);
   if (error) {
     return res.status(400).json({ error: error.details[0].message });
   }
