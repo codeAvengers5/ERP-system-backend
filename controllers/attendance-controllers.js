@@ -8,6 +8,8 @@ const { authenticate } = require('@google-cloud/local-auth');
 const { google } = require('googleapis');
 const EmployeeInfo = require("../models/employeeInfo");
 const Role = require("../models/role");
+const SCOPES = ['https://www.googleapis.com/auth/spreadsheets',];
+const TOKEN_PATH = path.join(process.cwd(), 'helpers/token.json');
 const CREDENTIALS_PATH = path.join(process.cwd(), 'helpers/credentials.json');
 const SPREADSHEET_ID = '15v_s9gD7WoodxW7nzRsaHfvYnLzX0EjRsydju7h1FAw';
 const RANGE = 'Sheet1!A1:A';
@@ -181,8 +183,8 @@ async function checkIn() {
         }
       }
     } catch (error) {
-      console.error('Error fetching employee info:', error);
-      throw error;
+      console.log('Error fetching employee info:', error.message);
+      // throw error;
     }
   }
   try {
@@ -222,7 +224,7 @@ async function performCheckIn(res) {
     console.log('Check-in performed successfully.');
     schedulePeriodicRead(auth); 
     } catch (error) {
-    console.error('Error performing check-in:', error);
+    console.log('Error performing check-in:', error);
   }
 }
 async function fetchAttendanceInfo(req, res) {
