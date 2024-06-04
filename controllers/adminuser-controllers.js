@@ -11,10 +11,12 @@ const cloudinary = require("../config/coludinary");
 const generateToken = require("../middleware/generateToken");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
-// const { authenticator } = require("otplib");
+const crypto = require("crypto");
 const { sendRestPasswordLink } = require("../helpers/sendConfirmationEmail");
 const generateBarcode = require("../helpers/generateBarcode");
 const { ideahub } = require("googleapis/build/src/apis/ideahub");
+const Crypto = require("../helpers/encryptDecrypt");
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 const registerValidator = joi.object({
   full_name: joi.string().required(),
   email: joi.string().email().required(),
@@ -209,14 +211,21 @@ async function LoginAdminUser(req, res, next) {
     const accountId = account._id;
     const roleName = role.role_name;
     const enable2fa = account.enable2fa;
-    const Verify2FA = account.is2faVerified
+    const Verify2FA = account.is2faVerified;
     const email = account.email;
     const full_name = account.full_name;
     const payload = {
       id: accountId,
       role: roleName,
     };
-    const userInfo = { accountId, email, full_name, roleName, enable2fa, Verify2FA };
+    const userInfo = {
+      accountId,
+      email,
+      full_name,
+      roleName,
+      enable2fa,
+      Verify2FA,
+    };
     const token = await generateToken(payload);
     res.cookie("jwt", token, {
       httpOnly: true,
@@ -230,32 +239,6 @@ async function LoginAdminUser(req, res, next) {
     return res.status(500).json({ Error: error });
   }
 }
-// async function Enable2FA(req, res) {
-//   const secret = speakeasy.generateSecret();
-//   const { id } = req.params;
-//   const user = await Employee.findByIdAndUpdate(id, {
-//     secrets2fa: secret.base32
-//     // enable2fa: true,
-//   }).exec();
-//   if (!user) {
-//     return res.status(400).json({ message: "User can not found" });
-//   } else {
-//     QRCode.toDataURL(secret.otpauth_url, (err, image_data) => {
-//       if (err) {
-//         console.error(err);
-//         return res.status(500).send("Internal Server Error");
-//       }
-//       req.qr = image_data;
-//       res.json({
-//         status: "success",
-//         data: {
-//           qrCodeUrl: req.qr,
-//           secret: secret,
-//         },
-//       });
-//     });
-//   }
-// }
 async function ready(req, res, next) {
   try {
     const { _id } = req.body;
@@ -303,105 +286,10 @@ async function Enable2FA(req, res, next) {
     next(err);
   }
 }
-// async function Enable2FA(req, res, next) {
-//   try {
-//     const { id } = req.params;
-//     if (!id) {
-//       return res.status(400).json({ message: "User can not found" });
-//     }
-
-//     const mfa = {
-//       generateQRcode: async () => {
-//         const secret = speakeasy.generateSecret({ length: 20 });
-
-//         // Generate a QR code data URL using the secret
-//         // const qrCodeUrl = secret.otpauth_url;
-//         QRCode.toDataURL(secret.otpauth_url, (err, qrUrl) => {
-//           if (err) {
-//             console.error(err);
-//             return res.status(500).send("Internal Server Error");
-//           }
-//           req.image = qrUrl;
-//           return { qrCodeUrl: req.image, secret: secret.base32 };
-//         });
-//       },
-//     };
-
-//     const response = await mfa.generateQRcode(id);
-//     res.locals.data = response;
-//     res.json(response);
-//   }
-//   catch (err) {
-//     next(err);
-//   }
-// }
-
-// try {
-//   const { id } = req.body;
-//   if (!id) {
-//     throw new ApiError(ReasonPhrases.BAD_REQUEST, StatusCodes.BAD_REQUEST);
-//   }
-//   const mfa = {
-//     generateQRcode: (id) => {
-//       // Implement the logic to generate the QR code
-//       return { qrCode: 'data:image/png;base64,...' };
-//     },
-//   };
-//   const response = await mfa.generateQRcode(id);
-//   res.locals.data = response;
-//   res.json(response);
-// } catch (err) {
-//   next(err);
-// }
-
-// async function Verify2FA(req, res, next) {
-//   try {
-//     const { id } = req.params;
-//     const { token } = req.body;
-//     const user = await Employee.findOne({ _id: id });
-
-//     if (!user) {
-//       return res.status(404).json({
-//         status: "fail",
-//         message: "User does not exist",
-//       });
-//     }
-//     if (!user.enable2fa) {
-//       await Employee.updateOne(
-//         { _id: id },
-//         { enable2fa: true, is2faVerified: true }
-//       );
-//     }
-//     const userSecret = user.secrets2fa;
-//     const otpResult = speakeasy.totp.verify({
-//       secret: userSecret,
-//       encoding: "base32",
-//       token: token,
-//       window: 1,
-//     });
-//     if (!otpResult) {
-//       return res.status(422).json({ message: "Invalid Code" });
-//     }
-//     res.json({
-//       status: "success",
-//       data: {
-//         otp_valid: true,
-//       },
-//     });
-//   } catch (error) {
-//     console.error("An error occurred during 2FA verification:", error);
-//     res.status(500).json({
-//       status: "error",
-//       message:
-//         "An error occurred during 2FA verification. Please try again later.",
-//     });
-//   }
-// }
-
 async function Verify2FA(req, res, next) {
   try {
     const { id, secret, token } = req.body;
-    const user = await Employee.findById(id)
+    const user = await Employee.findById(id);
     if (!user) {
       return res.status(404).json({
         status: "fail",
@@ -410,36 +298,40 @@ async function Verify2FA(req, res, next) {
     }
 
     const isVerified = mfa.verifyTOTP(secret, token);
-    console.log(isVerified)
     if (isVerified) {
-      const enable2fa = await mfa.saveMfaRecord(user);
-      res.json({
+      const code = mfa.generateBackupCode(secret);
+      const enable2fa = await mfa.saveMfaRecord(
+        user,
         secret,
-        enable2fa
+        code,
+        ENCRYPTION_KEY
+      );
+      res.json({
+        code,
+        secret,
+        enable2fa,
       });
     } else {
-      return next(new Error('Invalid Code'));
+      return next(new Error("Invalid Code"));
     }
   } catch (error) {
     next(error);
   }
 }
-
-// const crypto = require('crypto');
-
 const mfa = {
   getMfaRecordById: (userId) => {
     return new Promise((resolve, reject) => {
-
       Employee.findById(userId)
         .then((record) => {
           if (!record) {
-            reject(new ApiError(ReasonPhrases.NOT_FOUND, StatusCodes.NOT_FOUND));
+            reject(
+              new ApiError(ReasonPhrases.NOT_FOUND, StatusCodes.NOT_FOUND)
+            );
           }
           const { _id, enable2fa } = record;
           resolve({
             _id,
-            enable2fa
+            enable2fa,
           });
         })
         .catch((error) => {
@@ -448,17 +340,17 @@ const mfa = {
     });
   },
 
-  getOtpSecretById: (userId) => {
+  getOtpSecretById: (userId, encryptionKey) => {
     return new Promise((resolve, reject) => {
-      Employee.findById({_id: userId})
+      Employee.findById({ _id: userId })
         .then((record) => {
-          console.log(record);
           if (!record?.enable2fa) {
-            reject('enable 2fa is not activated');
+            reject("enable 2fa is not activated");
           }
-
-          resolve(record.secrets2fa);
-        }).catch((error) => {
+          const secret = Crypto.decrypt(record.secrets2fa, encryptionKey);
+          resolve(secret);
+        })
+        .catch((error) => {
           reject(error);
         });
     });
@@ -468,178 +360,142 @@ const mfa = {
     try {
       const otpResult = speakeasy.totp.verify({
         secret: secret,
-        encoding: 'base32',
+        encoding: "base32",
         token: token,
-        window: 2, // Increase the time window
+        window: 3,
       });
-  
-      console.log('verifyTOTP:', { otpResult, secret, token });
-  
+
+      // console.log("verifyTOTP:", { otpResult, secret, token });
+
       return otpResult;
     } catch (error) {
-      console.error('Error in verifyTOTP:', error);
+      console.log("Error in verifyTOTP:", error);
       return false;
     }
   },
 
-  generateBackupCode: () => {
-    // Generate a random backup code, e.g., using crypto.randomBytes()
-    return crypto.randomBytes(8).toString('hex');
+  generateBackupCode: (secret) => {
+    return Crypto.generateBackupCodes(secret);
   },
-
-  // verifyTOTP: (secret, token) => {
-  //   return authenticator.check(token, secret);
-  // },
-
-  saveMfaRecord: async (employee) => {
+  getBackupCodesById: (userId, encryptionKey) => {
     try {
-      // Update the employee document with the new MFA record
-      await Employee.findByIdAndUpdate(employee._id, {
-        secrets2fa: employee.secrets2fa,
-        enable2fa: true
-      });
+      const user = Employee.findOne({ userId });
+      if (!user || !user.backupCodes) {
+        return null;
+      }
 
-      // Return a boolean indicating whether the record was saved successfully
+      const decryptedBackupCodes = Crypto.decrypt(
+        user.backupCodes,
+        encryptionKey
+      );
+      return decryptedBackupCodes;
+    } catch (err) {
+      console.error("Error getting backup codes:", err);
+      throw err;
+    }
+  },
+  updateBackupCodesById: (userId, updatedBackupCodes, encryptionKey) => {
+    try {
+      const encryptedBackupCodes = this.encryptBackupCodes(
+        updatedBackupCodes,
+        encryptionKey
+      );
+      Employee.updateOne(
+        { userId },
+        { $set: { backupCodes: encryptedBackupCodes } }
+      );
+    } catch (err) {
+      console.error("Error updating backup codes:", err);
+      throw err;
+    }
+  },
+  saveMfaRecord: async (employee, secret, code, encryptionKey) => {
+    try {
+      const encryptedSecret = Crypto.encrypt(secret, encryptionKey);
+      const hashBackupCode = [];
+      for (const backupCode of code) {
+        const hashedBackupCode = Crypto.getHashString(backupCode.toString());
+        hashBackupCode.push(hashedBackupCode);
+      }
+
+      await Employee.findByIdAndUpdate(employee._id, {
+        backupCode: hashBackupCode,
+        secrets2fa: encryptedSecret,
+        enable2fa: true,
+      });
       return true;
     } catch (err) {
-      console.error('Error saving MFA record:', err);
+      console.error("Error saving MFA record:", err);
       return false;
     }
-  }
+  },
 };
-
-// const verify = async (req, res, next) => {
-//   try {
-//     const { secret, otp, id } = req.body;
-//     const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
-
-//     if (!otp || !secret || !id) {
-//       throw new ApiError(ReasonPhrases.BAD_REQUEST, StatusCodes.BAD_REQUEST);
-//     }
-
-//     if (!ENCRYPTION_KEY) {
-//       throw new ApiError(ReasonPhrases.INTERNAL_SERVER_ERROR, StatusCodes.INTERNAL_SERVER_ERROR);
-//     }
-
-//     const isVerified = mfa.verifyTOTP(secret, otp);
-
-//     if (isVerified) {
-//       const code = await mfa.generateBackupCode();
-//       const record = {
-//         code,
-//         secret,
-//         id
-//       };
-//       const isActive = await mfa.saveMfaRecord(record, ENCRYPTION_KEY);
-//       res.locals.data = {
-//         code,
-//         isActive
-//       };
-//       res.json(res.locals.data);
-//     } else {
-//       throw new ApiError("Invalid OTP", StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED);
-//     }
-//   } catch (err) {
-//     next(err);
-//   }
-// };
-
 async function validate(req, res, next) {
   try {
     const { otp, id } = req.body;
 
     if (!otp || !id) {
-      throw new ApiError(ReasonPhrases.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+      throw new Error(ReasonPhrases.BAD_REQUEST, StatusCodes.BAD_REQUEST);
     }
 
-    const secret = await mfa.getOtpSecretById(id);
+    if (!ENCRYPTION_KEY) {
+      throw new Error(
+        ReasonPhrases.INTERNAL_SERVER_ERROR,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+    }
+
+    const secret = await mfa.getOtpSecretById(id, ENCRYPTION_KEY);
     const verified = mfa.verifyTOTP(secret, otp);
     res.locals.data = {
-      verified
+      verified,
     };
     res.json(res.locals.data);
   } catch (err) {
+    console.log(err);
     next(err);
   }
-  // try {
-  //   // Extract the OTP and employee ID from the request body
-  //   const { otp, id } = req.body;
-  //   console.log(otp, id)
-
-  //   // Check if the OTP and employee ID are provided
-  //   if (!otp || !id) {
-  //     throw new ApiError(ReasonPhrases.BAD_REQUEST, StatusCodes.BAD_REQUEST);
-  //   }
-
-  //   // Retrieve the secret from the employee's record
-  //   const employee = await Employee.findById(id);
-  //   const secret = employee.secrets2fa;
-
-  //   // Verify the OTP using the retrieved secret
-  //   const verified = speakeasy.totp.verify({
-  //     secret: secret,
-  //     encoding: 'base32',
-  //     token: otp
-  //   });
-
-  //   // Store the verification result in the response locals
-  //   res.locals.data = {
-  //     verified
-  //   };
-
-  //   // Send the response
-  //   // super.send(res);
-  // } catch (err) {
-  //   // Pass the error to the next middleware function
-  //   next(err);
-  // }
 }
+async function validateBackup(req, res, next) {
+  try {
+    const { backupCode, userId } = req.body;
 
-// async function validate(req, res, next) {
-//   try {
-//     // Extract the OTP and employee ID from the request body
-//     const { otp, id } = req.body;
+    if (!backupCode || !userId) {
+      throw new Error(ReasonPhrases.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+    }
 
-//     // Check if the OTP and employee ID are provided
-//     if (!otp || !id) {
-//       throw new ApiError(ReasonPhrases.BAD_REQUEST, StatusCodes.BAD_REQUEST);
-//     }
+    if (!ENCRYPTION_KEY) {
+      throw new Error(
+        ReasonPhrases.INTERNAL_SERVER_ERROR,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+    }
 
-//     // Check if the encryption key is provided
-//     const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
-//     if (!ENCRYPTION_KEY) {
-//       throw new ApiError(ReasonPhrases.INTERNAL_SERVER_ERROR, StatusCodes.INTERNAL_SERVER_ERROR);
-//     }
+    const backupCodes = mfa.getBackupCodesById(userId, ENCRYPTION_KEY);
 
-//     // Retrieve the encrypted secret from the employee's record
-//     const employee = await Employee.findById(id);
-//     const encryptedSecret = employee.secrets2fa;
+    if (!backupCodes || backupCodes.length === 0) {
+      throw new Error(ReasonPhrases.NOT_FOUND, StatusCodes.NOT_FOUND);
+    }
 
-//     // Decrypt the secret using the encryption key
-//     const decryptedSecret = crypto.createHmac('sha256', ENCRYPTION_KEY)
-//       .update(encryptedSecret)
-//       .digest('hex');
+    const isValidBackupCode = backupCodes.includes(backupCode);
 
-//     // Verify the OTP using the decrypted secret
-//     const verified = speakeasy.totp.verify({
-//       secret: decryptedSecret,
-//       encoding: 'base32',
-//       token: otp
-//     });
+    if (!isValidBackupCode) {
+      throw new Error(ReasonPhrases.UNAUTHORIZED, StatusCodes.UNAUTHORIZED);
+    }
+    const updatedBackupCodes = backupCodes.filter(
+      (code) => code !== backupCode
+    );
+     mfa.updateBackupCodesById(userId, updatedBackupCodes, ENCRYPTION_KEY);
 
-//     // Store the verification result in the response locals
-//     res.locals.data = {
-//       verified
-//     };
-
-//     // Send the response
-//     // super.send(res);
-//   } catch (err) {
-//     // Pass the error to the next middleware function
-//     next(err);
-//   }
-// }
-
+    res.locals.data = {
+      verified: true,
+    };
+    res.json(res.locals.data);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+}
 async function ForgotPassword(req, res, next) {
   const { email } = req.body;
   const user = await Employee.findOne({ email: email });
@@ -742,5 +598,6 @@ module.exports = {
   Enable2FA,
   Verify2FA,
   validate,
+  validateBackup,
   LogoutAdminUser,
 };

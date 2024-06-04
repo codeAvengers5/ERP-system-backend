@@ -31,6 +31,10 @@ const employeeSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
+  backupCode:{
+    type:Array,
+    required: false
+  }
  
 });
 const Employee = mongoose.model("Employee", employeeSchema);
