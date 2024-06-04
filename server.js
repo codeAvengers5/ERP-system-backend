@@ -13,8 +13,8 @@ const newsRoute = require("./routes/newsRoutes");
 const employeeReport = require("./routes/reportRoutes.js");
 const notificationRoute = require("./routes/notificationRoute.js");
 const contactusRoute = require("./routes/contactusRoutes.js");
-const eventRoute = require("./routes/eventRoutes.js");
-const paymentRoute = require("./routes/paymentRoutes.js");
+// const eventRoute = require("./routes/eventRoutes.js");
+// const paymentRoute = require("./routes/paymentRoutes.js");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const { performCheckIn } = require("./controllers/attendance-controllers.js");
@@ -46,8 +46,8 @@ app.use(policyRoutes);
 app.use(employeeReport);
 app.use(notificationRoute);
 app.use(contactusRoute);
-app.use(eventRoute);
-app.use(paymentRoute);
+// app.use(eventRoute);
+// app.use(paymentRoute);
 connectDB()
   .then(() => {
     server.listen(process.env.PORT, (req, res) => {
@@ -61,8 +61,7 @@ function schedulePeriodicCheckIns(res) {
   setInterval(() => {
     const currentDate = new Date();
     const currentHour = currentDate.getHours();
-
-    if (currentHour >= 10 && currentHour < 21) {
+    if (currentHour >= 7 && currentHour < 6) {
       performCheckIn(res);
     } else {
       console.log("Outside the desired range. Skipping check-in.");

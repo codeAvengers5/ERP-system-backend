@@ -33,12 +33,12 @@ async function isAuthenticated(req, res, next) {
         message: "2FA is not enabled",
       });
     }
-    if (!user.is2faVerified) {
-      return res.status(401).json({
-        success: false,
-        message: "2FA is not verified",
-      });
-    }
+    // if (!user.is2faVerified) {
+    //   return res.status(401).json({
+    //     success: false,
+    //     message: "2FA is not verified",
+    //   });
+    // }
 
     next();
   } catch (error) {
