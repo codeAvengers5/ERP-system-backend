@@ -23,6 +23,7 @@ async function GetAllUsers(req, res, next) {
           return null;
         }
         return {
+          id: employee._id,
           name: employee.full_name,
           email: employee.email,
           role: role.role_name,
@@ -63,15 +64,24 @@ async function UpdateEmployeeforItAdmin(req, res) {
     const {
       full_name,
       email,
-      dob,
+      phone_no,
       position,
       role_name,
       start_date,
       salary,
       gender,
     } = req.body;
-    if(!full_name  || !email || !dob  || !gender || !position || !role_name  || !start_date  || !salary ){
-     return res.status(400).json({message: 'Missing required fields'});
+    if (
+      !full_name ||
+      !email ||
+      !phone_no ||
+      !gender ||
+      !position ||
+      !role_name ||
+      !start_date ||
+      !salary
+    ) {
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
     const images = req.files && req.files["images"];
@@ -100,28 +110,30 @@ async function UpdateEmployeeforItAdmin(req, res) {
       if (!employeeInfo) {
         return res.status(404).json({ message: "Employee info not found" });
       }
-      const employee = await Employee.findByIdAndUpdate(id,
-        {full_name:full_name,email:email});
+      const employee = await Employee.findByIdAndUpdate(id, {
+        full_name: full_name,
+        email: email,
+      });
       if (!employee) {
         return res.status(404).json({ message: "Employee not found" });
       }
       const roleId = employee.role_id;
       const role = await Role.findByIdAndUpdate(roleId, { role_name });
       const updatedemployeeInfo = await EmployeeInfo.findByIdAndUpdate(
-        employeeInfo._id ,
+        employeeInfo._id,
         {
-          position:position,
-          start_date:start_date,
+          position: position,
+          start_date: start_date,
           salary: salary,
-          email:  email,
-          dob: dob,
+          email: email,
+          phone_no: phone_no,
           gender: gender,
           images: urls,
-          image_profile: urls_pic[0]
+          image_profile: urls_pic[0],
         }
       );
-      if(!updatedemployeeInfo){
-        return res.status(404).json({message:"not found"})
+      if (!updatedemployeeInfo) {
+        return res.status(404).json({ message: "not found" });
       }
       res.status(200).json({
         message: "Employee account updated successfully",
@@ -205,5 +217,5 @@ module.exports = {
   GetAllUsers,
   UpdateEmployeeforItAdmin,
   UpdateEmployeeInfo,
-  PrintID
+  PrintID,
 };

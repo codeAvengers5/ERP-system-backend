@@ -435,14 +435,11 @@ async function validate(req, res, next) {
     const { otp, id } = req.body;
 
     if (!otp || !id) {
-      throw new Error(ReasonPhrases.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+      throw new Error("Otp and Id can not be empty");
     }
 
     if (!ENCRYPTION_KEY) {
-      throw new Error(
-        ReasonPhrases.INTERNAL_SERVER_ERROR,
-        StatusCodes.INTERNAL_SERVER_ERROR
-      );
+      throw new Error("Can not be empty");
     }
 
     const secret = await mfa.getOtpSecretById(id, ENCRYPTION_KEY);
@@ -461,31 +458,28 @@ async function validateBackup(req, res, next) {
     const { backupCode, userId } = req.body;
 
     if (!backupCode || !userId) {
-      throw new Error(ReasonPhrases.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+      throw new Error("Field can not be empty");
     }
 
     if (!ENCRYPTION_KEY) {
-      throw new Error(
-        ReasonPhrases.INTERNAL_SERVER_ERROR,
-        StatusCodes.INTERNAL_SERVER_ERROR
-      );
+      throw new Error("Encryption key can not be empty");
     }
 
     const backupCodes = mfa.getBackupCodesById(userId, ENCRYPTION_KEY);
 
     if (!backupCodes || backupCodes.length === 0) {
-      throw new Error(ReasonPhrases.NOT_FOUND, StatusCodes.NOT_FOUND);
+      throw new Error("ReasonPhrases.NOT_FOUND, StatusCodes.NOT_FOUND");
     }
 
     const isValidBackupCode = backupCodes.includes(backupCode);
 
     if (!isValidBackupCode) {
-      throw new Error(ReasonPhrases.UNAUTHORIZED, StatusCodes.UNAUTHORIZED);
+      throw new Error("Invalid code");
     }
     const updatedBackupCodes = backupCodes.filter(
       (code) => code !== backupCode
     );
-     mfa.updateBackupCodesById(userId, updatedBackupCodes, ENCRYPTION_KEY);
+    mfa.updateBackupCodesById(userId, updatedBackupCodes, ENCRYPTION_KEY);
 
     res.locals.data = {
       verified: true,
