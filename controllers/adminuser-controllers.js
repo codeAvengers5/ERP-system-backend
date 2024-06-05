@@ -11,10 +11,8 @@ const cloudinary = require("../config/coludinary");
 const generateToken = require("../middleware/generateToken");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
-const crypto = require("crypto");
 const { sendRestPasswordLink } = require("../helpers/sendConfirmationEmail");
 const generateBarcode = require("../helpers/generateBarcode");
-const { ideahub } = require("googleapis/build/src/apis/ideahub");
 const Crypto = require("../helpers/encryptDecrypt");
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 const registerValidator = joi.object({
@@ -22,6 +20,7 @@ const registerValidator = joi.object({
   email: joi.string().email().required(),
   password: joi.string().min(6).required(),
   dob: joi.string().required(),
+  phone_no: joi.string().min(10).required(),
   position: joi.string().required(),
   role_name: joi.string().required(),
   start_date: joi.date().required(),
@@ -80,7 +79,7 @@ async function RegisterAdminUser(req, res, next) {
     start_date,
     salary,
     gender,
-    phone_no,
+    phone_no
   } = req.body;
   const images = req.files["images"];
   const image_profile = req.files["image_profile"];
@@ -89,6 +88,7 @@ async function RegisterAdminUser(req, res, next) {
     email,
     password,
     dob,
+    phone_no,
     position,
     role_name,
     start_date,
@@ -96,7 +96,6 @@ async function RegisterAdminUser(req, res, next) {
     gender,
     images,
     image_profile,
-    phone_no,
   });
 
   if (error) {
@@ -143,11 +142,11 @@ async function RegisterAdminUser(req, res, next) {
           employee_id: employeeId,
           email,
           dob,
+          phone_no,
           position,
           start_date,
           salary,
           gender,
-          phone_no,
           images: urls,
           image_profile: urls_pic,
           barcode: barcode,
@@ -190,7 +189,7 @@ async function RegisterAdminUser(req, res, next) {
     }
   } catch (error) {
     console.error("Error creating employee account:", error);
-    return res.status(500).json({ error: error });
+    // return res.status(500).json({ error: error });
   }
 }
 async function LoginAdminUser(req, res, next) {
@@ -570,7 +569,7 @@ async function UpdatePassword(req, res, next) {
       .json({ success: true, message: "Password updated successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+    // res.status(500).json({ error: "Internal server error" });
   }
 }
 async function LogoutAdminUser(req, res, next) {
@@ -581,7 +580,7 @@ async function LogoutAdminUser(req, res, next) {
     res.status(200).json({ message: "Logged Out" });
   } catch (error) {
     console.log("Logout failed with error: ", error);
-    return res.status(500).json({ Error: error });
+    // return res.status(500).json({ Error: error });
   }
 }
 

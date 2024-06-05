@@ -12,7 +12,12 @@ const {
   sendWelcomeEmail,
   sendRestPasswordLink,
 } = require("../helpers/sendConfirmationEmail");
-
+let cookieOptions = {
+  httpOnly: true,
+  secure:"production",
+  sameSite: "strict",
+  path: "/",
+};
 const registerValidator = joi.object({
   username: joi.string().required(),
   email: joi.string().email().required(),
@@ -30,7 +35,6 @@ async function RegisterSiteUser(req, res, next) {
   const { username, email, password } = req.body;
   const hashedPassword = await hashPassword(password);
   if (!hashedPassword) return next({ status: 500 });
-  console.log("hashedPassword", hashedPassword)
   const validation = registerValidator.validate(req.body);
   if (validation.error) {
     const errorDetails = validation.error.details
@@ -51,7 +55,6 @@ async function RegisterSiteUser(req, res, next) {
       const confirmationCode = generateConfirmationCode();
       siteUser.confirmationCode = confirmationCode;
       await siteUser.save();
-      console.log("em",siteUser.email,confirmationCode,siteUser.username)
       // Send confirmation email
       await sendConfirmationEmail(
         siteUser.email,
@@ -79,7 +82,7 @@ async function RegisterSiteUser(req, res, next) {
 }
 async function ConfirmEmail(req, res, next) {
   const { confirmationCode } = req.body;
-  console.log("confirm",confirmationCode);
+  console.log("confirm", confirmationCode);
   try {
     const user = await User.findOne({ confirmationCode });
     if (!user) {
@@ -101,7 +104,7 @@ async function ConfirmEmail(req, res, next) {
 }
 async function LoginSiteUser(req, res, next) {
   const { email, password, rememberMe } = req.body;
-  console.log("Login Site User",req.body);
+  console.log("Login Site User", req.body);
   if (!email || !password)
     return res
       .status(400)
@@ -111,18 +114,18 @@ async function LoginSiteUser(req, res, next) {
     return res.status(400).json({ Error: "Invalid Email or Password" });
   const validPassword = bcrypt.compareSync(password, account.password);
   if (!validPassword) {
-    return res.status(403).send({ auth: false, token: null });
+    return res.status(400).json({ Error: "Invalid Email or Password" });
   }
   try {
     try {
       const accountId = account._id;
-    
+
       const email = account.email;
       const username = account.username;
       const payload = {
         id: accountId,
       };
-      const userInfo = { accountId, email, username};
+      const userInfo = { accountId, email, username };
       const token = await generateToken(payload);
       res.cookie("jwt", token, {
         httpOnly: true,
@@ -147,7 +150,7 @@ async function LoginSiteUser(req, res, next) {
     res.status(200).json({ token: token, message: "LoggedIn" });
   } catch (error) {
     console.log("Login failed with error : ", error);
-    return res.status(500).json({ Error: error });
+    // return res.status(500).json({ Error: error });
   }
 }
 async function ForgotPassword(req, res, next) {
