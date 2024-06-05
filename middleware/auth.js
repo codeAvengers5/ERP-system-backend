@@ -27,12 +27,12 @@ async function isAuthenticated(req, res, next) {
         message: "User does not exist",
       });
     }
-    if (!user.enable2fa) {
-      return res.status(401).json({
-        success: false,
-        message: "2FA is not enabled",
-      });
-    }
+    // if (!user.enable2fa) {
+    //   return res.status(401).json({
+    //     success: false,
+    //     message: "2FA is not enabled",
+    //   });
+    // }
     // if (!user.is2faVerified) {
     //   return res.status(401).json({
     //     success: false,
@@ -85,6 +85,7 @@ async function isManager(req, res, next) {
       message: "Access denied, You must log as an Manager.",
     });
   }
+  next();
 }
 module.exports = {
   isAuthenticated,
