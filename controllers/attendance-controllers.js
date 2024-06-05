@@ -168,7 +168,7 @@ async function checkIn() {
         const attendanceRecord = {
           date: currentDate,
           check_in: null,
-          status: "Weekend/Holiday",
+          status: "No record",
         };
         if (attendance) {
           attendance.attendanceHistory.push(attendanceRecord);
@@ -243,12 +243,24 @@ async function fetchAttendanceInfo(req, res) {
       const employeeInfo = await EmployeeInfo.findOne({ employee_id: employeeId }).exec();
       if (!employeeInfo) return res.status(404).json({ message: "Employee info not found" });
 
-      res.status(200).json({
-        employee: employee,
-        employeeInfo:employeeInfo,
-        role: role,
-        arrivaltime: `${mostRecentDocument.attendanceHistory[0].check_in.getHours()}:${mostRecentDocument.attendanceHistory[0].check_in.getMinutes()}`
-      });
+      // res.status(200).json({
+      //   employee: employee,
+      //   employeeInfo:employeeInfo,
+      //   role: role,
+      //   arrivaltime: `${mostRecentDocument.attendanceHistory[0].check_in.getHours()}:${mostRecentDocument.attendanceHistory[0].check_in.getMinutes()}`
+      // });
+      let arrivaltime = 'N/A';
+      console.log(mostRecentDocument.attendanceHistory)
+if (mostRecentDocument.attendanceHistory[0] && mostRecentDocument.attendanceHistory[0].check_in) {
+  arrivaltime = `${mostRecentDocument.attendanceHistory[0].check_in.getHours()}:${mostRecentDocument.attendanceHistory[0].check_in.getMinutes()}`;
+}
+
+res.status(200).json({
+  employee: employee,
+  employeeInfo: employeeInfo,
+  role: role,
+  arrivaltime: arrivaltime
+});
       
     } else {
       console.log('No attendance records found.');
@@ -438,4 +450,11 @@ async function getAttendanceCounts(req, res) {
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
-module.exports = { performCheckIn,searchEmployee,filterEmployeesByDate,filterEmployeesByStatus,fetchAttendanceInfo,getAttendanceCounts };
+module.exports = { 
+  performCheckIn,
+  searchEmployee,
+  filterEmployeesByDate,
+  filterEmployeesByStatus,
+  fetchAttendanceInfo,
+  getAttendanceCounts 
+};

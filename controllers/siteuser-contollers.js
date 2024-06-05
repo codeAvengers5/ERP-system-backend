@@ -30,6 +30,7 @@ async function RegisterSiteUser(req, res, next) {
   const { username, email, password } = req.body;
   const hashedPassword = await hashPassword(password);
   if (!hashedPassword) return next({ status: 500 });
+  console.log("hashedPassword", hashedPassword)
   const validation = registerValidator.validate(req.body);
   if (validation.error) {
     const errorDetails = validation.error.details
@@ -50,6 +51,7 @@ async function RegisterSiteUser(req, res, next) {
       const confirmationCode = generateConfirmationCode();
       siteUser.confirmationCode = confirmationCode;
       await siteUser.save();
+      console.log("em",siteUser.email,confirmationCode,siteUser.username)
       // Send confirmation email
       await sendConfirmationEmail(
         siteUser.email,
@@ -77,6 +79,7 @@ async function RegisterSiteUser(req, res, next) {
 }
 async function ConfirmEmail(req, res, next) {
   const { confirmationCode } = req.body;
+  console.log("confirm",confirmationCode);
   try {
     const user = await User.findOne({ confirmationCode });
     if (!user) {
@@ -98,6 +101,7 @@ async function ConfirmEmail(req, res, next) {
 }
 async function LoginSiteUser(req, res, next) {
   const { email, password, rememberMe } = req.body;
+  console.log("Login Site User",req.body);
   if (!email || !password)
     return res
       .status(400)
@@ -110,18 +114,34 @@ async function LoginSiteUser(req, res, next) {
     return res.status(403).send({ auth: false, token: null });
   }
   try {
-    const token = await generateToken({ id: account._id });
-    const cookieOptions = {
-      httpOnly: true,
-      secure: req.secure || req.headers["x-forwarded-proto"] === "https", // Adjust based on your deployment environment
-    };
+    try {
+      const accountId = account._id;
+    
+      const email = account.email;
+      const username = account.username;
+      const payload = {
+        id: accountId,
+      };
+      const userInfo = { accountId, email, username};
+      const token = await generateToken(payload);
+      res.cookie("jwt", token, {
+        httpOnly: true,
+        secure: false,
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+      res.status(200).json({ userInfo: userInfo, message: "LoggedIn" });
+    } catch (error) {
+      console.log("Login failed with error : ", error);
+      return res.status(500).json({ Error: error });
+    }
 
     if (rememberMe) {
       cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000;
     } else {
       cookieOptions.maxAge = 7 * 24 * 60 * 60 * 1000;
     }
-    req.session.userId = account._id;
+    req.cookie.userId = account._id;
     console.log(req.session);
     res.cookie("jwt", token, cookieOptions);
     res.status(200).json({ token: token, message: "LoggedIn" });
