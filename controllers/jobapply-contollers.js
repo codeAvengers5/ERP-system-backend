@@ -44,8 +44,9 @@ async function JobApply(req, res) {
   const { id } = req.params;
   const { full_name, email, phone_no } = req.body;
   const cv = req.file;
-  const userId = req.user.id;
-  if (!userId) {
+  const decoded = jwt.verify(token, process.env.JWT_TOKEN_KEY);
+  const user = await User.findOne({ _id: decoded.id });
+  if (!user) {
     return res.status(403).json({ message: "you should be logged in first" });
   }
   if (!(await JobPost.findOne({ _id: id }))) {
