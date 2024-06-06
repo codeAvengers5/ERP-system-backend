@@ -13,16 +13,18 @@ const newsRoute = require("./routes/newsRoutes");
 const employeeReport = require("./routes/reportRoutes.js");
 const notificationRoute = require("./routes/notificationRoute.js");
 const contactusRoute = require("./routes/contactusRoutes.js");
-// const eventRoute = require("./routes/eventRoutes.js");
-// const paymentRoute = require("./routes/paymentRoutes.js");
+const eventRoute = require("./routes/eventRoutes.js");
+const paymentRoute = require("./routes/paymentRoutes.js");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const { performCheckIn } = require("./controllers/attendance-controllers.js");
 require("dotenv").config();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
-app.use(cookieParser());
+app.use(cors({
+  origin: ["http://localhost:3000", "http://localhost:3001"],
+  credentials: true
+}));app.use(cookieParser());
 app.get("/", (req, res) => {
   res.send("welcome");
 });
@@ -46,8 +48,8 @@ app.use(policyRoutes);
 app.use(employeeReport);
 app.use(notificationRoute);
 app.use(contactusRoute);
-// app.use(eventRoute);
-// app.use(paymentRoute);
+app.use(eventRoute);
+app.use(paymentRoute);
 connectDB()
   .then(() => {
     server.listen(process.env.PORT, (req, res) => {

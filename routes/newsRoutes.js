@@ -5,10 +5,13 @@ const {
     getNewsById,
     getAllNews,
     createNews,
+    searchNews,
 } = require("../controllers/news-controller");
 const {uploadImages} = require("../config/multer");
 const router = express.Router();
 const { isAuthenticated, isManager } = require("../middleware/auth");
+
+router.get("/searchnews", searchNews);
 
 router.post(
   "/createNews",
@@ -17,10 +20,9 @@ router.post(
  uploadImages.array("images", 10),
  createNews
 );
-router.get("/getAllNews", isAuthenticated, getAllNews);
+router.get("/getAllNews", getAllNews);
 router.get(
   "/getNewsById/:id",
-  isAuthenticated,
   getNewsById
 );
 router.put(

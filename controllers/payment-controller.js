@@ -75,7 +75,7 @@ const createOrder = async (req, res) => {
 
     if (response.data.status === "success") {
       const eventAppointed = await AppointedEvent.findOne({ _id: eventId });
-      const payment = await Payment.findOne({ _id: eventId });
+      const payment = await Payment.findOne({ eventId: eventId });
       eventAppointed.paymentStatus = "completed";
       payment.paymentStatus = "completed";
       eventAppointed.save();

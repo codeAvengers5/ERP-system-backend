@@ -15,7 +15,7 @@ cloudinary.config({
 
 const jobPostValidator = joi.object({
   full_name: joi.string().required(),
-  email: joi.string().email().required(),
+  // email: joi.string().email().required(),
   phone_no: joi.string().min(6).required(),
   cv: joi
     .object({
@@ -42,7 +42,7 @@ async function ViewJob(req, res) {
 }
 async function JobApply(req, res) {
   const { id } = req.params;
-  const { full_name, email, phone_no } = req.body;
+  const { full_name, phone_no } = req.body;
   const cv = req.file;
   const userId = req.user.id;
   if (!userId) {
@@ -55,8 +55,6 @@ async function JobApply(req, res) {
     });
   }
   const { error } = jobPostValidator.validate({
-    full_name,
-    email,
     phone_no,
     cv,
   });
@@ -65,7 +63,7 @@ async function JobApply(req, res) {
     return res.status(400).json({ error: error.details[0].message });
   }
   try {
-    const existingApplication = await JobSummary.findOne({
+    const existingApplication = await JobSummary.find({
       job_id: id,
       user_id: userId,
     });
@@ -159,9 +157,24 @@ async function StatusChange(req, res) {
     res.status(500).json({ error: "Internal server error" });
   }
 }
+async function searchJobs(req, res) {
+  const { title } = req.query;
+  try {
+    const jobs = await JobPost.find({
+      title: { $regex: `^${title}`, $options: "i" },
+    });
+    return res.status(200).json({
+      jobs: jobs,
+    });
+  } catch (error) {
+    console.error("Error searching jobs:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
 module.exports = {
   ViewJob,
   JobApply,
   ViewJobSummary,
   StatusChange,
+  searchJobs
 };

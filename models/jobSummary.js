@@ -7,17 +7,13 @@ const jobSummarySchema = new mongoose.Schema(
       ref: "JobPost",
       required: true,
     },
-    full_name: {
-      type: String,
-      required: true,
-    },
     cv: {
       type: String,
       required: true,
     },
-    email: {
+    full_name:{
       type: String,
-      required: true,
+      required:true
     },
     phone_no: {
       type: String,
