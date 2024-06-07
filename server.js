@@ -21,7 +21,7 @@ const { performCheckIn } = require("./controllers/attendance-controllers.js");
 require("dotenv").config();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({ origin: "http://localhost:3004", credentials: true }));
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(cookieParser());
 app.get("/", (req, res) => {
   res.send("welcome");
@@ -30,7 +30,7 @@ const server = require("http").createServer(app);
 const io = require("socket.io")(server, {
   pingTimeout: 5000,
   cors: {
-    origin: "http://localhost:3003",
+    origin: "http://localhost:3000",
   },
 });
 require("./socketio.js")(io);
@@ -62,7 +62,7 @@ function schedulePeriodicCheckIns(res) {
     const currentDate = new Date();
     const currentHour = currentDate.getHours();
 
-    if (currentHour >= 7 && currentHour < 24) {
+    if (currentHour >= 11 && currentHour < 12) {
       performCheckIn(res);
     } else {
       console.log("Outside the desired range. Skipping check-in.");

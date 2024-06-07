@@ -36,8 +36,8 @@ async function ViewJob(req, res) {
     const jobvacancy = await JobPost.find({});
     res.json(jobvacancy);
   } catch (error) {
-    console.log(`Error in viewing the job post: ${error}`);
-    return res.status(500).json({ error: "Internal Server Error" });
+    // console.log(`Error in viewing the job post: ${error}`);
+    return res.status(500).json({ error: "Error fetching job vacancies" });
   }
 }
 async function JobApply(req, res) {
@@ -61,7 +61,6 @@ async function JobApply(req, res) {
     cv,
   });
   if (error) {
-    console.log("error is here");
     return res.status(400).json({ error: error.details[0].message });
   }
   try {
@@ -70,6 +69,12 @@ async function JobApply(req, res) {
       user_id: userId,
     });
 
+    // if (existingApplication) {
+    //   return res.status(409).json({
+    //     message: "You have already applied to this job",
+    //     value: { appliedUser: existingApplication },
+    //   });
+    // }
     if (existingApplication) {
       return res.status(409).json({
         message: "You have already applied to this job",
@@ -82,10 +87,8 @@ async function JobApply(req, res) {
       { resource_type: "raw" },
       async function (err, result) {
         if (err) {
-          console.error(err);
-          return res.send(
-            "File format is wrong! Only pdf files are supported."
-          );
+          return res.send("File format is wrong! Only pdf files are supported.");
+
         }
         fs.unlinkSync(path);
         const cvUrl = result.url;
@@ -114,8 +117,8 @@ async function JobApply(req, res) {
       }
     );
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: error });
+    console.log("error",error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 async function ViewJobSummary(req, res) {
@@ -123,7 +126,7 @@ async function ViewJobSummary(req, res) {
     const jobsummary = await JobSummary.find({});
     res.json(jobsummary);
   } catch (error) {
-    console.log(`Error in viewing the job post: ${error}`);
+    // console.log(`Error in viewing the job post: ${error}`);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
@@ -135,6 +138,7 @@ async function StatusChange(req, res) {
     if (!jobSummary) {
       return res.status(404).json({ message: "Leave application not found" });
     }
+    // console.log('Retrieved jobSummary:', jobSummary);
     jobSummary.status = status;
 
     if (status === "rejected") {

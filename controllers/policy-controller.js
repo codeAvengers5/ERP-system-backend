@@ -7,7 +7,8 @@ const policyValidator = joi.object({
 });
 
 async function createPolicy(req, res) {
-  const { error } = policyValidator.validate(req.body);
+  // const { error } = policyValidator.validate(req.body);
+  const { error } = policyValidator.validate(req.body, { abortEarly: false });
 
   if (error) {
     return res.status(400).json({ error: error.details[0].message });
@@ -23,13 +24,13 @@ async function createPolicy(req, res) {
     });
 
     await policy.save();
-
+     
     res.status(201).json({
       message: "Policy created successfully",
       policy,
     });
   } catch (error) {
-    console.error("Error creating policy:", error);
+    // console.error("Error creating policy:", error);
     res.status(500).json({ error: "Failed to create policy" });
   }
 }
@@ -61,7 +62,7 @@ async function updatePolicyById(req, res) {
 
     res.json({ message: "Policy updated successfully", policy });
   } catch (error) {
-    console.error(error);
+    // console.error(error);
     res.status(500).json({ error: "Failed to update policy" });
   }
 }
@@ -72,7 +73,7 @@ async function getAllPolicies(req, res) {
 
     res.status(200).json(policies);
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     res.status(500).json({ error: "Failed to fetch policies" });
   }
 }
