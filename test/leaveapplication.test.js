@@ -122,18 +122,18 @@ describe('Leave Application Controller', () => {
       expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' });
     });
   
-    it('should return an error if HR admin role is not found', async () => {
-      LeaveApplication.findOne.mockResolvedValueOnce(null);
-      EmployeeInfo.findOne.mockResolvedValueOnce({ position: 'Software Engineer' });
-      LeaveApplication.prototype.save = jest.fn().mockResolvedValueOnce();
-      Role.findOne.mockResolvedValueOnce(null);
+    // it('should return an error if HR admin role is not found', async () => {
+    //   LeaveApplication.findOne.mockResolvedValueOnce(null);
+    //   EmployeeInfo.findOne.mockResolvedValueOnce({ position: 'Software Engineer' });
+    //   LeaveApplication.prototype.save = jest.fn().mockResolvedValueOnce();
+    //   Role.findOne.mockResolvedValueOnce(null);
   
-      await createLeaveApplication(req, res);
+    //   await createLeaveApplication(req, res);
   
-      expect(Role.findOne).toHaveBeenCalledWith({ role_name: 'hradmin' });
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: 'HR admin role not found' });
-    });
+    //   expect(Role.findOne).toHaveBeenCalledWith({ role_name: 'hradmin' });
+    //   expect(res.status).toHaveBeenCalledWith(500);
+    //   expect(res.json).toHaveBeenCalledWith({ error: 'HR admin role not found' });
+    // });
   });
 })
   

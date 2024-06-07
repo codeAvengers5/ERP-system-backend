@@ -33,7 +33,6 @@ async function createPromotion(req, res) {
     images,
   });
   if (error) {
-    console.log("Having error...");
     return res.status(400).json({ error: error.details[0].message });
   }
   try {
@@ -75,8 +74,8 @@ async function createPromotion(req, res) {
       });
     }
   } catch (error) {
-    console.error("Error creating promotion:", error);
-    res.status(500).json({ error: error });
+    // console.error("Error creating promotion:", error);
+    res.status(500).json({ error: error.message});
   }
 }
 async function getAllPromotions(req, res) {
@@ -85,7 +84,6 @@ async function getAllPromotions(req, res) {
 
     res.status(200).json(promotions);
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: "Failed to fetch promotions" });
   }
 }
@@ -102,7 +100,6 @@ async function getPromotionById(req, res) {
   }
 }
 async function updatePromotionById(req, res) {
-  console.log(req.body);
   const { id } = req.params;
   const { title, description } = req.body;
   const images = req.files;
@@ -118,7 +115,6 @@ async function updatePromotionById(req, res) {
     const uploader = async (path) => await cloudinary.uploads(path, "Images");
     if (req.method === "PUT") {
       const urls = []; // Declare and initialize the urls array
-      console.log(req.files);
       const files = req.files;
       for (const file of files) {
         const { path } = file;
@@ -139,14 +135,13 @@ async function updatePromotionById(req, res) {
       if (!promotion) {
         return res.status(404).json({ error: "Promotion not found" });
       }
-      res.json({ message: "Promotion updated successfully", promotion });
+        return res.status(200).json({ message: "Promotion updated successfully", promotion });
     } else {
       return res.status(405).json({
         err: `${req.method} method not allowed`,
       });
     }
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: "Failed to update promotion" });
   }
 }

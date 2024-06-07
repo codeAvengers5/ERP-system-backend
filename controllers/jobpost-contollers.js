@@ -58,7 +58,6 @@ const createJobPost = async (req, res) => {
       await notification.save();
     }
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: "Failed to create job post" });
   }
 };

@@ -1,10 +1,10 @@
+
 const News = require("../models/news");
 const joi = require("joi");
 const cloudinary = require("../config/coludinary");
 const fs = require("fs");
 const Employee = require("../models/employee");
 const SiteUserNotification = require("../models/siteuserNotification");
-const Notification = require("../models/notification");
 const User = require("../models/user");
 const newsValidator = joi.object({
   title: joi.string().required(),
@@ -65,48 +65,53 @@ async function createNews(req, res) {
     for_all,
     images,
   });
-  console.log("req",req.body);
+
   if (error) {
     return res.status(400).json({ error: error.details[0].message });
   }
+
   try {
     const uploader = async (path) => await cloudinary.uploads(path, "Images");
     if (req.method === "POST") {
       const urls = [];
       const files = req.files;
+
       for (const file of files) {
         const { path } = file;
         const newPath = await uploader(path);
         urls.push(newPath);
         fs.unlinkSync(path);
       }
+
       const news = new News({
         title,
         description,
         for_all,
         images: urls,
       });
+
       await news.save();
 
       res.status(201).json({
         message: "News created successfully",
       });
-      if (news.for_all == true) {
-        sendNotification(news);
-        sendUserNotification(news);
+      if (news.for_all) {
+        await sendNotification(news);
+        await sendUserNotification(news);
       } else {
-        sendNotification(news);
+        await sendNotification(news);
       }
     } else {
       return res.status(405).json({
-        err: `${req.method} method not allowed`,
+        error: `${req.method} method not allowed`,
       });
     }
+
   } catch (error) {
-    console.error("Error creating news:", error);
-    res.status(500).json({ error: error });
+    res.status(500).json({ error: error.message });
   }
 }
+
 async function searchNews(req, res) {
   const { title } = req.query;
   try {
@@ -118,7 +123,7 @@ async function searchNews(req, res) {
       news: news,
     });
   } catch (error) {
-    console.error("Error searching news:", error);
+    
     return res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -131,9 +136,8 @@ async function getAllNews(req, res) {
       news = await News.find({ for_all: true });
     }
 
-    res.status(200).json(news);
+res.status(200).json(news);
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: "Failed to fetch news" });
   }
 }
@@ -159,22 +163,24 @@ async function updateNewsById(req, res) {
     for_all,
     images,
   });
-  console.log("req",req.body);
+
   if (error) {
     return res.status(400).json({ error: error.details[0].message });
   }
+
   try {
     const uploader = async (path) => await cloudinary.uploads(path, "Images");
     if (req.method === "PUT") {
       const urls = [];
-      console.log(req.files);
       const files = req.files;
+
       for (const file of files) {
         const { path } = file;
         const newPath = await uploader(path);
         urls.push(newPath);
         fs.unlinkSync(path);
       }
+
       const news = await News.findByIdAndUpdate(
         id,
         {
@@ -189,17 +195,18 @@ async function updateNewsById(req, res) {
       if (!news) {
         return res.status(404).json({ error: "News not found" });
       }
-      res.json({ message: "News updated successfully", news });
+
+      res.status(200).json({ message: "News updated successfully", news });
     } else {
       return res.status(405).json({
-        err: `${req.method} method not allowed`,
+        error: `${req.method} method not allowed`,
       });
     }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to update news" });
+    res.status(500).json({ error: error.message });
   }
 }
+
 async function deleteNewsById(req, res) {
   try {
     const { id } = req.params;

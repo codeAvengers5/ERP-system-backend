@@ -1,3 +1,4 @@
+
 const EmployeeInfo = require("../models/employeeInfo");
 const LeaveApplication = require("../models/leaveApplication");
 const Notification = require("../models/notification");
@@ -18,6 +19,11 @@ async function createLeaveApplication(req, res) {
     const employeeInfo = await EmployeeInfo.findOne({
       employee_id: employee_id,
     });
+    if(!employeeInfo){
+      return res
+        .status(404)
+        .json({ error: 'Employee information not found' });
+    }
     const currentYear = new Date().getFullYear();
     const existingAnnualLeave = await LeaveApplication.findOne({
       employee_id,
@@ -54,7 +60,6 @@ async function createLeaveApplication(req, res) {
     });
     await notification.save();
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -68,7 +73,6 @@ async function getLeaveApplicationById_forEmployee(req, res) {
     }
     return res.status(200).json(leaveApplication);
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -82,7 +86,6 @@ async function getLeaveApplication_forEmployee(req, res) {
     }
     return res.status(200).json(leaveApplication);
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -92,7 +95,6 @@ async function getAllLeaveApplications_forHR(req, res) {
     res.status(200).json(leaveApplications);
     return res.status(403).json({ message: "Access forbidden" });
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -122,7 +124,6 @@ async function updateLeaveApplication(req, res) {
 
     res.status(200).json({ message: "Leave application updated successfully" });
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -145,7 +146,6 @@ async function updateStatus(req, res) {
     });
     await notification.save();
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -173,7 +173,6 @@ async function deleteLeaveApplication(req, res) {
       return res.status(404).json({ message: "Not authorized" });
     }
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -193,7 +192,6 @@ async function filterByStatus(req, res) {
 
     return res.status(200).json(leaveApplications);
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: "Internal server error" });
   }
 }

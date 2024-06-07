@@ -3,7 +3,8 @@ const Contact = require("../models/contact");
 const createContactus = async (req, res) => {
   const { full_name, email, message } = req.body;
   if (!full_name || !email || !message) {
-    console.log("Please fill all the fields");
+   
+    res.status(400).json({ error: "Please fill all the fields"});
   }
   try {
     const contactus = new Contact({
