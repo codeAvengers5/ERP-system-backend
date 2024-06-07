@@ -28,6 +28,10 @@ async function createAppointment(req, res) {
 
     const appointment = new AppointedEvent(appointmentData);
     await appointment.save();
+    if(with_cash == false){
+      appointment.paymentStatus === "with_food"
+      appointment.save()
+    }
     res.status(201).json(appointment);
   } catch (error) {
     console.log(error);
@@ -50,8 +54,8 @@ async function getAppointment(req, res) {
 }
 async function getUserAppointment(req, res) {
   try {
-    const userId = req.params.id;
-    const appointment = await AppointedEvent.findById({ user_id: userId });
+    const userId = req.user.id;
+    const appointment = await AppointedEvent.find({ user_id: userId });
 
     if (!appointment) {
       return res.status(404).json({ error: "Appointment not found" });

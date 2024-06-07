@@ -42,7 +42,7 @@ const appointedEventSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    enum: ["pending", "completed"],
+    enum: ["pending", "completed","with_food"],
     default: "pending",
   },
 });

@@ -108,13 +108,13 @@ async function LoginSiteUser(req, res, next) {
   if (!email || !password)
     return res
       .status(400)
-      .json({ Error: "Email and Password can not be Empty" });
+      .json({ message: "Email and Password can not be Empty" });
   const account = await User.findOne({ email: email });
   if (!account)
-    return res.status(400).json({ Error: "Invalid Email or Password" });
+    return res.status(400).json({ message: "Invalid Email or Password" });
   const validPassword = bcrypt.compareSync(password, account.password);
   if (!validPassword) {
-    return res.status(400).json({ Error: "Invalid Email or Password" });
+    return res.status(400).json({ message: "Invalid Email or Password" });
   }
   try {
     try {
@@ -144,8 +144,7 @@ async function LoginSiteUser(req, res, next) {
     } else {
       cookieOptions.maxAge = 7 * 24 * 60 * 60 * 1000;
     }
-    req.cookie.userId = account._id;
-    console.log(req.session);
+    // req.cookie.userId = account._id;
     res.cookie("jwt", token, cookieOptions);
     res.status(200).json({ token: token, message: "LoggedIn" });
   } catch (error) {

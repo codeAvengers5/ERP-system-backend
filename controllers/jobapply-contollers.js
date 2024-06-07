@@ -6,6 +6,7 @@ const fs = require("fs");
 const dotenv = require("dotenv");
 const Role = require("../models/role");
 const SiteUserNotification = require("../models/siteuserNotification");
+const Notification = require("../models/notification");
 dotenv.config();
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
@@ -40,6 +41,25 @@ async function ViewJob(req, res) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
+async function ViewJobUser(req, res) {
+  const userId = req.user.id;
+  try {
+    const jobVacancies = await JobSummary.find({ user_id: userId });
+    console.log(jobVacancies);
+    if (jobVacancies.length > 0) {
+      const jobs = await Promise.all(jobVacancies.map(async (jobVacancy) => {
+        const job = await JobPost.findById(jobVacancy.job_id);
+        return { job, jobVacancy };
+      }));
+      res.status(200).json(jobs);
+    } else {
+      res.status(404).json({ error: "Job not found" });
+    }
+  } catch (error) {
+    console.log(`Error in viewing the job post: ${error}`);
+    res.status(500).json({ error: "An error occurred while fetching the job posts" });
+  }
+}
 async function JobApply(req, res) {
   const { id } = req.params;
   const { full_name, phone_no } = req.body;
@@ -55,6 +75,7 @@ async function JobApply(req, res) {
     });
   }
   const { error } = jobPostValidator.validate({
+    full_name,
     phone_no,
     cv,
   });
@@ -67,11 +88,9 @@ async function JobApply(req, res) {
       job_id: id,
       user_id: userId,
     });
-
     if (existingApplication) {
       return res.status(409).json({
-        message: "You have already applied to this job",
-        value: { appliedUser: existingApplication },
+        message: "You have already applied to this job"
       });
     }
     const path = cv.path;
@@ -89,9 +108,8 @@ async function JobApply(req, res) {
         const cvUrl = result.url;
         const appliedUser = new JobSummary({
           job_id: id,
-          full_name,
-          email,
-          phone_no,
+          full_name: full_name,
+          phone_no: phone_no,
           cv: cvUrl,
           user_id: userId,
           status: "pending",
@@ -101,7 +119,7 @@ async function JobApply(req, res) {
           message: "You have Successfully applied to the job application",
           value: { appliedUser },
         });
-        const job = JobPost.find({ job_id });
+        const job = JobPost.findById({ id });
         const hr = await Role.findOne({ role_name: "hradmin" });
         const notification = new Notification({
           recipient: "hradmin",
@@ -173,8 +191,9 @@ async function searchJobs(req, res) {
 }
 module.exports = {
   ViewJob,
+  ViewJobUser,
   JobApply,
   ViewJobSummary,
   StatusChange,
-  searchJobs
+  searchJobs,
 };
