@@ -29,7 +29,6 @@ async function createPolicy(req, res) {
       policy,
     });
   } catch (error) {
-    console.error("Error creating policy:", error);
     res.status(500).json({ error: "Failed to create policy" });
   }
 }
@@ -61,8 +60,7 @@ async function updatePolicyById(req, res) {
 
     res.json({ message: "Policy updated successfully", policy });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to update policy" });
+     res.status(500).json({ error: "Failed to update policy" });
   }
 }
 
@@ -72,8 +70,7 @@ async function getAllPolicies(req, res) {
 
     res.status(200).json(policies);
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Failed to fetch policies" });
+     res.status(500).json({ error: "Failed to fetch policies" });
   }
 }
 

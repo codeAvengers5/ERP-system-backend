@@ -37,7 +37,7 @@ async function ViewJob(req, res) {
     const jobvacancy = await JobPost.find({});
     res.json(jobvacancy);
   } catch (error) {
-    console.log(`Error in viewing the job post: ${error}`);
+    // console.log(`Error in viewing the job post: ${error}`);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
@@ -79,18 +79,19 @@ async function JobApply(req, res) {
     phone_no,
     cv,
   });
+  // console.log("cv",cv);
   if (error) {
-    console.log("error is here");
     return res.status(400).json({ error: error.details[0].message });
   }
   try {
-    const existingApplication = await JobSummary.find({
+    const existingApplication = await JobSummary.findOne({
       job_id: id,
       user_id: userId,
     });
     if (existingApplication) {
       return res.status(409).json({
-        message: "You have already applied to this job"
+        message: "You have already applied to this job",
+        value: { appliedUser: existingApplication },
       });
     }
     const path = cv.path;
@@ -98,28 +99,27 @@ async function JobApply(req, res) {
       path,
       { resource_type: "raw" },
       async function (err, result) {
+        // console.log("checkkkk",err, result)
         if (err) {
-          console.error(err);
-          return res.send(
-            "File format is wrong! Only pdf files are supported."
-          );
+          return res.send("File format is wrong! Only pdf files are supported.");
         }
         fs.unlinkSync(path);
         const cvUrl = result.url;
         const appliedUser = new JobSummary({
           job_id: id,
-          full_name: full_name,
-          phone_no: phone_no,
+          full_name,
+
+          phone_no,
           cv: cvUrl,
           user_id: userId,
           status: "pending",
         });
-        appliedUser.save();
+        await appliedUser.save();
         res.status(201).json({
           message: "You have Successfully applied to the job application",
           value: { appliedUser },
         });
-        const job = JobPost.findById({ id });
+        const job = await JobPost.findOne({ _id: id });
         const hr = await Role.findOne({ role_name: "hradmin" });
         const notification = new Notification({
           recipient: "hradmin",
@@ -130,16 +130,17 @@ async function JobApply(req, res) {
       }
     );
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: error });
+    console.log("error", error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
+
 async function ViewJobSummary(req, res) {
   try {
     const jobsummary = await JobSummary.find({});
     res.json(jobsummary);
   } catch (error) {
-    console.log(`Error in viewing the job post: ${error}`);
+    // console.log(`Error in viewing the job post: ${error}`);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
@@ -149,7 +150,7 @@ async function StatusChange(req, res) {
     const { status } = req.body;
     const jobSummary = await JobSummary.findById(id);
     if (!jobSummary) {
-      return res.status(404).json({ message: "Leave application not found" });
+      return res.status(404).json({ message: "job apply not found" });
     }
     jobSummary.status = status;
 

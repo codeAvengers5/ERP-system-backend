@@ -75,15 +75,13 @@ async function RegisterSiteUser(req, res, next) {
         message: "Please confirm/verify your email.",
       });
     }
-    console.log("Success", token);
-  } catch (error) {
+      } catch (error) {
     return res.status(500).json(error);
   }
 }
 async function ConfirmEmail(req, res, next) {
   const { confirmationCode } = req.body;
-  console.log("confirm", confirmationCode);
-  try {
+   try {
     const user = await User.findOne({ confirmationCode });
     if (!user) {
       return next(new Error("Invalid confirmation code/User not found"));
@@ -98,13 +96,11 @@ async function ConfirmEmail(req, res, next) {
       .status(200)
       .json({ success: true, message: "Your account has been confirmed" });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+       res.status(500).json({ error: "Internal server error" });
   }
 }
 async function LoginSiteUser(req, res, next) {
   const { email, password, rememberMe } = req.body;
-  console.log("Login Site User", req.body);
   if (!email || !password)
     return res
       .status(400)
@@ -135,7 +131,7 @@ async function LoginSiteUser(req, res, next) {
       });
       res.status(200).json({ userInfo: userInfo, message: "LoggedIn" });
     } catch (error) {
-      console.log("Login failed with error : ", error);
+      // console.log("Login failed with error : ", error);
       return res.status(500).json({ Error: error });
     }
 
@@ -148,8 +144,8 @@ async function LoginSiteUser(req, res, next) {
     res.cookie("jwt", token, cookieOptions);
     res.status(200).json({ token: token, message: "LoggedIn" });
   } catch (error) {
-    console.log("Login failed with error : ", error);
-    // return res.status(500).json({ Error: error });
+    // console.log("Login failed with error : ", error);
+    return res.status(500).json({ Error: error });
   }
 }
 async function ForgotPassword(req, res, next) {
@@ -162,7 +158,10 @@ async function ForgotPassword(req, res, next) {
   } else {
     try {
       const token = await generateToken({ id: user._id });
-      if (!token) return next({ status: 500 });
+      if (!token) {
+        return res.status(500).json({ error: "Internal server error" });
+      }
+        //  return next({ status: 500 });
       res.cookie("jwt", token, {
         httpOnly: true,
         secure: false,
@@ -173,7 +172,8 @@ async function ForgotPassword(req, res, next) {
         .status(200)
         .json({ mgs: "verfiy with the link", token: token, id: user._id });
     } catch (err) {
-      console.log(err);
+      // console.log(err);
+      return res.status(500).json({ error: "Internal server error" });
     }
   }
 }
@@ -197,9 +197,8 @@ async function ResetPassword(req, res, next) {
         }
         res.status(200).json({ mgs: "Password has been reset successfully" });
 
-        console.log("Password has been reset successfully");
       } catch (error) {
-        console.error("Error resetting password:", error);
+        // console.error("Error resetting password:", error);
         res.status(500).json({ message: error });
       }
     }
@@ -227,7 +226,7 @@ async function UpdatePassword(req, res, next) {
       .status(200)
       .json({ success: true, message: "Password updated successfully" });
   } catch (error) {
-    console.error(error);
+    // console.error(error);
     res.status(500).json({ error: "Internal server error" });
   }
 }

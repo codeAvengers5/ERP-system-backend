@@ -32,7 +32,7 @@ app.use(express.json());
 describe('News Controller', () => {
   afterEach(() => {
     jest.clearAllMocks();
-    mockFs.restore();
+    // mockFs.restore();
   });
 
   describe('createNews', () => {
