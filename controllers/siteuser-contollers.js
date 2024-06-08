@@ -168,7 +168,6 @@ async function ConfirmEmail(req, res, next) {
 }
 async function LoginSiteUser(req, res, next) {
   const { email, password, rememberMe } = req.body;
-  log
   if (!email || !password)
     return res
       .status(400)
