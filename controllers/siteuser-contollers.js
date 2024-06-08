@@ -43,19 +43,18 @@ async function RegisterSiteUser(req, res, next) {
     res.send(`<h2>Vaildation Error: </h2>${errorDetails}`);
     return;
   }
-  const siteUser = new User({
-    username,
-    email,
-    password: hashedPassword,
-  });
   try {
     const userExist = await User.findOne({ email: email });
     if (userExist) throw "Email already exist";
     else {
+      const siteUser = new User({
+        username,
+        email,
+        password: hashedPassword,
+      });
+      await siteUser.save();
       const confirmationCode = generateConfirmationCode();
       siteUser.confirmationCode = confirmationCode;
-      await siteUser.save();
-      // Send confirmation email
       await sendConfirmationEmail(
         siteUser.email,
         confirmationCode,
@@ -101,6 +100,7 @@ async function ConfirmEmail(req, res, next) {
 }
 async function LoginSiteUser(req, res, next) {
   const { email, password, rememberMe } = req.body;
+  log
   if (!email || !password)
     return res
       .status(400)
