@@ -63,7 +63,7 @@ async function RegisterSiteUser(req, res, next) {
         confirmationCode,
         siteUser.username
       );
-      if (!siteUser) return res.status(500).json(error.details[0].message);
+      // if (!siteUser) return res.status(500).json(error.details[0].message);
       const token = await generateToken({ id: siteUser._id });
       if (!token) return next({ status: 500 });
       res.cookie("jwt", token, {
@@ -77,9 +77,10 @@ async function RegisterSiteUser(req, res, next) {
         message: "Please confirm/verify your email.",
       });
     }
-  } catch (error) {
-    return res.status(500).json(error);
-  }
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ error: 'Username already exists' });
+    }  }
 }
 async function ConfirmEmail(req, res, next) {
   const { confirmationCode } = req.body;
