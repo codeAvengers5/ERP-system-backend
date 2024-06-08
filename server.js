@@ -31,7 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 //     credentials: true,
 //   })
 // );
-app.use(cors({origin:'https://user-site-production.up.railway.app/'}))
+app.use(cors({origin:'https://user-site-production.up.railway.app'}))
 app.use(cookieParser());
 app.get("/", (req, res) => {
   res.send("welcome");
