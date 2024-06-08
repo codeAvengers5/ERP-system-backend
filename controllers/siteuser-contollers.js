@@ -90,7 +90,7 @@ async function RegisterSiteUser(req, res, next) {
     const hashedPassword = await hashPassword(password);
 
     if (!hashedPassword) {
-      return next({ status: 500, message: 'Error hashing password' });
+      return next({ status: 500, error: 'Error hashing password' });
     }
 
     const validation = registerValidator.validate(req.body);
@@ -124,7 +124,7 @@ async function RegisterSiteUser(req, res, next) {
     const token = await generateToken({ id: newUser._id });
 
     if (!token) {
-      return next({ status: 500, message: 'Error generating authentication token' });
+      return next({ status: 500, error: 'Error generating authentication token' });
     }
 
     res.cookie('jwt', token, {
@@ -142,7 +142,7 @@ async function RegisterSiteUser(req, res, next) {
     if (err.code === 11000) {
       return res.status(400).json({ error: 'Email already exists' });
     }
-    return next({ status: 500, message: 'An error occurred while registering the user' });
+    return next({ status: 500, error: 'An error occurred while registering the user' });
   }
 }
 
