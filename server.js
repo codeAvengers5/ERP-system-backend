@@ -27,7 +27,8 @@ app.use(
       "http://localhost:3000",
       "http://localhost:3001",
       "https://user-site-production.up.railway.app",
-    ]
+    ],
+    credentials: true,
   })
 );
 app.use(cookieParser());
