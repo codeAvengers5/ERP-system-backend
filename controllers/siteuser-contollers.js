@@ -99,7 +99,7 @@ async function RegisterSiteUser(req, res, next) {
       const errorDetails = validation.error.details
         .map((d) => d.message)
         .join('<br>');
-      return res.status(400).send(`<h2>Validation Error:</h2>${errorDetails}`);
+      return res.status(400).json(errorDetails);
     }
 
     const existingUser = await User.findOne({ email:email });
