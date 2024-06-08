@@ -55,6 +55,9 @@ async function RegisterSiteUser(req, res, next) {
       await siteUser.save();
       const confirmationCode = generateConfirmationCode();
       siteUser.confirmationCode = confirmationCode;
+
+      await User.findByIdAndUpdate(newUser._id, {confirmationCode:  confirmationCode });
+
       await sendConfirmationEmail(
         siteUser.email,
         confirmationCode,
