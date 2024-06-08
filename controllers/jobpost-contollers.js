@@ -30,7 +30,7 @@ const createJobPost = async (req, res) => {
       closingDate,
     });
     if (error) {
-      console.log("Having error...");
+      // console.log("Having error...");
       return res.status(400).json({ error: error.details[0].message });
     }
     const jobPost = new JobPost({

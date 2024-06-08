@@ -76,7 +76,7 @@ describe('Contact Us Controller', () => {
       await createContactus(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({   "error": "Failed to send contacus form" });
+      expect(res.json).toHaveBeenCalledWith({   "error": "Failed to send contact us form" });
     });
   });
 

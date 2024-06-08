@@ -15,8 +15,8 @@ const createContactus = async (req, res) => {
     await contactus.save();
     res.status(200).json({ contactus });
   } catch (error) {
-    res.status(500).json({ error: "Failed to send contacus form" });
-    console.log(error);
+    res.status(500).json({ error: "Failed to send contact us form" });
+    // console.log(error);
   }
 };
 const getContactUsInfo = async (req, res) => {

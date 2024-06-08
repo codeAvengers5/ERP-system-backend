@@ -37,7 +37,7 @@ async function ViewJob(req, res) {
     const jobvacancy = await JobPost.find({});
     res.json(jobvacancy);
   } catch (error) {
-    console.log(`Error in viewing the job post: ${error}`);
+    // console.log(`Error in viewing the job post: ${error}`);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
@@ -79,7 +79,7 @@ async function JobApply(req, res) {
     phone_no,
     cv,
   });
-  console.log("cv",cv);
+  // console.log("cv",cv);
   if (error) {
     return res.status(400).json({ error: error.details[0].message });
   }
@@ -99,7 +99,7 @@ async function JobApply(req, res) {
       path,
       { resource_type: "raw" },
       async function (err, result) {
-        console.log("checkkkk",err, result)
+        // console.log("checkkkk",err, result)
         if (err) {
           return res.send("File format is wrong! Only pdf files are supported.");
         }
@@ -140,7 +140,7 @@ async function ViewJobSummary(req, res) {
     const jobsummary = await JobSummary.find({});
     res.json(jobsummary);
   } catch (error) {
-    console.log(`Error in viewing the job post: ${error}`);
+    // console.log(`Error in viewing the job post: ${error}`);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
