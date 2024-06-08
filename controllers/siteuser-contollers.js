@@ -90,7 +90,7 @@ async function RegisterSiteUser(req, res, next) {
     const hashedPassword = await hashPassword(password);
 
     if (!hashedPassword) {
-      return next({ status: 500, error: 'Error hashing password' });
+      return res.status(500).json({ error: 'Error hashing password' });
     }
 
     const validation = registerValidator.validate(req.body);
@@ -99,10 +99,10 @@ async function RegisterSiteUser(req, res, next) {
       const errorDetails = validation.error.details
         .map((d) => d.message)
         .join('<br>');
-      return res.status(400).json(errorDetails);
+      return res.status(400).json({ error: errorDetails });
     }
 
-    const existingUser = await User.findOne({ email:email });
+    const existingUser = await User.findOne({ email });
 
     if (existingUser) {
       return res.status(400).json({ error: 'Email already exists' });
@@ -124,12 +124,12 @@ async function RegisterSiteUser(req, res, next) {
     const token = await generateToken({ id: newUser._id });
 
     if (!token) {
-      return next({ status: 500, error: 'Error generating authentication token' });
+      return res.status(500).json({ error: 'Error generating authentication token' });
     }
 
     res.cookie('jwt', token, {
       httpOnly: true,
-      secure: false,
+      secure: false, // Set to true in production
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -142,9 +142,10 @@ async function RegisterSiteUser(req, res, next) {
     if (err.code === 11000) {
       return res.status(400).json({ error: 'Email already exists' });
     }
-    return next({ status: 500, error: 'An error occurred while registering the user' });
+    return res.status(500).json({ error: 'An error occurred while registering the user' });
   }
 }
+
 
 async function ConfirmEmail(req, res, next) {
   const { confirmationCode } = req.body;
