@@ -31,58 +31,58 @@ const registerValidator = joi.object({
     )
     .required(),
 });
-// async function RegisterSiteUser(req, res, next) {
-//   const { username, email, password } = req.body;
-//   const hashedPassword = await hashPassword(password);
-//   if (!hashedPassword) return next({ status: 500 });
-//   const validation = registerValidator.validate(req.body);
-//   if (validation.error) {
-//     const errorDetails = validation.error.details
-//       .map((d) => d.message)
-//       .join("<br>");
-//     res.send(`<h2>Vaildation Error: </h2>${errorDetails}`);
-//     return;
-//   }
-//   try {
-//     const userExist = await User.findOne({ email: email });
-//     if (userExist) return res.status(400).json({ error: 'Username already exists' });
-//       const siteUser = new User({
-//         username,
-//         email,
-//         password: hashedPassword,
-//       });
-//       await siteUser.save();
-//       const confirmationCode = generateConfirmationCode();
-//       siteUser.confirmationCode = confirmationCode;
+async function RegisterSiteUser(req, res, next) {
+  const { username, email, password } = req.body;
+  const hashedPassword = await hashPassword(password);
+  if (!hashedPassword) return next({ status: 500 });
+  const validation = registerValidator.validate(req.body);
+  if (validation.error) {
+    const errorDetails = validation.error.details
+      .map((d) => d.message)
+      .join("<br>");
+    res.send(`<h2>Vaildation Error: </h2>${errorDetails}`);
+    return;
+  }
+  try {
+    const userExist = await User.findOne({ email: email });
+    if (userExist) return res.status(400).json({ error: 'Username already exists' });
+      const siteUser = new User({
+        username,
+        email,
+        password: hashedPassword,
+      });
+      await siteUser.save();
+      const confirmationCode = generateConfirmationCode();
+      siteUser.confirmationCode = confirmationCode;
 
-//       await User.findByIdAndUpdate(newUser._id, {confirmationCode });
+      await User.findByIdAndUpdate(newUser._id, {confirmationCode });
 
-//       await sendConfirmationEmail(
-//         siteUser.email,
-//         confirmationCode,
-//         siteUser.username
-//       );
-//       // if (!siteUser) return res.status(500).json(error.details[0].message);
-//       const token = await generateToken({ id: siteUser._id });
-//       if (!token) return next({ status: 500 });
-//       res.cookie("jwt", token, {
-//         httpOnly: true,
-//         secure: false,
-//         maxAge: 7 * 24 * 60 * 60 * 1000,
-//       });
-//       res.status(201).json({
-//         success: true,
-//         siteUser,
-//         message: "Please confirm/verify your email.",
-//       });
-//   } catch (err) {
-//     if (err.code === 11000) {
-//       return res.status(400).json({ error: 'Username already exists' });
-//     } 
-//    }
-//     res.status(500).json({ error: 'An error occurred while registering the user' });
+      await sendConfirmationEmail(
+        siteUser.email,
+        confirmationCode,
+        siteUser.username
+      );
+      // if (!siteUser) return res.status(500).json(error.details[0].message);
+      const token = await generateToken({ id: siteUser._id });
+      if (!token) return next({ status: 500 });
+      res.cookie("jwt", token, {
+        httpOnly: true,
+        secure: false,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+      res.status(201).json({
+        success: true,
+        siteUser,
+        message: "Please confirm/verify your email.",
+      });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ error: 'Username already exists' });
+    } 
+   }
+    res.status(500).json({ error: 'An error occurred while registering the user' });
   
-// }
+}
 
 async function RegisterSiteUser(req, res, next) {
   try {
