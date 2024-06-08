@@ -58,7 +58,7 @@ const createOrder = async (req, res) => {
       amount: price,
       tx_ref: txRef,
       currency: "ETB",
-      return_url: "http://localhost:3000/events",
+      return_url: "https://user-site-production.up.railway.app/events",
     };
     const response = await axios.post(
       `https://api.chapa.co/v1/transaction/initialize`,
