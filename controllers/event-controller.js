@@ -28,13 +28,12 @@ async function createAppointment(req, res) {
 
     const appointment = new AppointedEvent(appointmentData);
     await appointment.save();
-    if(with_cash == false){
-      appointment.paymentStatus === "with_food"
-      appointment.save()
+    if (with_cash == false) {
+      appointment.paymentStatus === "with_food";
+      appointment.save();
     }
     res.status(201).json(appointment);
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: "Failed to create appointment" });
   }
 }
@@ -47,7 +46,7 @@ async function getAppointment(req, res) {
       return res.status(404).json({ error: "Appointment not found" });
     }
 
-    res.json(appointment);
+    res.status(200).json(appointment);
   } catch (error) {
     res.status(500).json({ error: "Failed to get appointment" });
   }
@@ -56,12 +55,10 @@ async function getUserAppointment(req, res) {
   try {
     const userId = req.user.id;
     const appointment = await AppointedEvent.find({ user_id: userId });
-
-    if (!appointment) {
+    if (appointment.length === 0) {
       return res.status(404).json({ error: "Appointment not found" });
     }
-
-    res.json(appointment);
+    res.status(200).json(appointment);
   } catch (error) {
     res.status(500).json({ error: "Failed to get appointment" });
   }
@@ -74,7 +71,7 @@ async function getAllAppointment(req, res) {
       return res.status(404).json({ error: "No appointments found" });
     }
 
-    res.json(appointments);
+    res.status(200).json(appointments);
   } catch (error) {
     res.status(500).json({ error: "Failed to get appointments" });
   }
@@ -82,22 +79,28 @@ async function getAllAppointment(req, res) {
 async function updateAppointment(req, res) {
   try {
     const appointmentId = req.params.id;
-    const updateData = req.body;
-    const event = AppointedEvent.findById(appointmentId);
-    if (event.paymentStatus == "completed") {
-      res.status(401).json({ msg: "Can not update" });
+    const { eventData } = req.body;
+    const event = await AppointedEvent.findById(appointmentId);
+    if (event && event.paymentStatus === "completed") {
+      return res.status(401).json({ msg: "Can not update" });
+    }
+    if (!event) {
+      return res.status(404).json({ error: "Appointment not found" });
     }
     const updatedAppointment = await AppointedEvent.findByIdAndUpdate(
       appointmentId,
-      updateData,
+      eventData,
       { new: true }
     );
-
+    if (updatedAppointment.with_cash === false) {
+      updatedAppointment.paymentStatus = "with_food";
+      updatedAppointment.save();
+    }
     if (!updatedAppointment) {
       return res.status(404).json({ error: "Appointment not found" });
     }
 
-    res.json(updatedAppointment);
+    res.status(200).json(updatedAppointment);
   } catch (error) {
     res.status(500).json({ error: "Failed to update appointment" });
   }
@@ -105,19 +108,20 @@ async function updateAppointment(req, res) {
 async function deleteAppointment(req, res) {
   try {
     const appointmentId = req.params.id;
-    const event = AppointedEvent.findById(appointmentId);
-    if (event.paymentStatus == "completed") {
-      res.status(401).json({ msg: "Can not delete" });
+    const appointment = AppointedEvent.findById(appointmentId);
+    if (!appointment) {
+      return res.status(404).json({ error: "Appointment not found" });
+    }
+    if (appointment.paymentStatus === "completed") {
+      return res.status(401).json({ msg: "Cannot delete a paid appointment" });
     }
     const deletedAppointment = await AppointedEvent.findByIdAndDelete(
       appointmentId
     );
-
     if (!deletedAppointment) {
       return res.status(404).json({ error: "Appointment not found" });
     }
-
-    res.json({ message: "Appointment deleted successfully" });
+    res.status(200).json({ message: "Appointment deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: "Failed to delete appointment" });
   }

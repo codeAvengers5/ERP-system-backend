@@ -5,7 +5,7 @@ async function getNotificationsByRole(role, id) {
   return await Notification.find({
     recipient: role,
     read: false,
-    employee_id: id,
+    employeeId: id,
   }).exec();
 }
 
@@ -22,7 +22,7 @@ async function markAllNotificationsAsRead(req, res) {
   try {
     const notifications = await Notification.find({
       recipient: role.role,
-      employee_id: role.id,
+      employeeId: role.id,
     }).exec();
     for (const notification of notifications) {
       notification.read = true;

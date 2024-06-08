@@ -28,13 +28,13 @@ const newsValidator = joi.object({
     .required(),
 });
 const sendNotification = async (news) => {
-  const employees = await Employee.find();
+  const employees = await Employee.find({});
   const notifications = [];
   for (const employee of employees) {
     const newsNotification = new Notification({
       recipient: "employee",
       message: `New news is available: ${news.title}`,
-      employee_id: employee._id,
+      employeeId: employee._id,
     });
     notifications.push(newsNotification);
   }
@@ -65,7 +65,6 @@ async function createNews(req, res) {
     for_all,
     images,
   });
-  console.log("req",req.body);
   if (error) {
     return res.status(400).json({ error: error.details[0].message });
   }
@@ -103,8 +102,7 @@ async function createNews(req, res) {
       });
     }
   } catch (error) {
-    console.error("Error creating news:", error);
-    res.status(500).json({ error: error });
+    res.status(500).json({ error: error.message });
   }
 }
 async function searchNews(req, res) {
@@ -133,7 +131,6 @@ async function getAllNews(req, res) {
 
     res.status(200).json(news);
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: "Failed to fetch news" });
   }
 }
@@ -159,7 +156,6 @@ async function updateNewsById(req, res) {
     for_all,
     images,
   });
-  console.log("req",req.body);
   if (error) {
     return res.status(400).json({ error: error.details[0].message });
   }
@@ -167,7 +163,6 @@ async function updateNewsById(req, res) {
     const uploader = async (path) => await cloudinary.uploads(path, "Images");
     if (req.method === "PUT") {
       const urls = [];
-      console.log(req.files);
       const files = req.files;
       for (const file of files) {
         const { path } = file;
@@ -189,14 +184,13 @@ async function updateNewsById(req, res) {
       if (!news) {
         return res.status(404).json({ error: "News not found" });
       }
-      res.json({ message: "News updated successfully", news });
+      res.status(200).json({ message: "News updated successfully", news });
     } else {
       return res.status(405).json({
         err: `${req.method} method not allowed`,
       });
     }
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: "Failed to update news" });
   }
 }

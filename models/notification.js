@@ -14,7 +14,7 @@ const notificationSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    employee_id: {
+    employeeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employee",
       required: true,

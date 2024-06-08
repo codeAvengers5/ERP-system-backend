@@ -169,13 +169,13 @@ async function RegisterAdminUser(req, res, next) {
         const hrNotification = new Notification({
           recipient: "hradmin",
           message: `New Employee has been created ${employee.full_name}`,
-          employee_id: hr.employee_id,
+          employeeId: hr.employee_id,
         });
         notifications.push(hrNotification);
         const managerNotification = new Notification({
           recipient: "manager",
           message: `New Employee has been created ${employee.full_name}`,
-          employee_id: manager.employee_id,
+          employeeId: manager.employee_id,
         });
         notifications.push(managerNotification);
         for (const notification of notifications) {

@@ -13,14 +13,16 @@ const {
   ViewJobSummary,
   StatusChange,
   searchJobs,
+  ViewJobUser,
 } = require("../controllers/jobapply-contollers");
 const { uploadCV } = require("../config/multer");
 const { isAuthenticated, isHRAdmin } = require("../middleware/auth");
 const { isUserAuthenticated } = require("../middleware/auth-user");
 
 router.get("/searchjobs", searchJobs);
+router.get("/getjobuser",isUserAuthenticated,ViewJobUser)
 router.post("/createJobPosts", isAuthenticated, isHRAdmin, createJobPost);
-router.get("/getJobPosts", isAuthenticated, isHRAdmin, getAllJobPosts);
+router.get("/getJobPosts", getAllJobPosts);
 router.get("/getJobPostsId/:id", getJobPostById);
 router.put("/updateJobPosts/:id",isAuthenticated,isHRAdmin,updateJobPostById);
 router.delete("/deleteJobPosts/:id",isAuthenticated,isHRAdmin,deleteJobPostById);

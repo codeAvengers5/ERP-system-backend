@@ -11,7 +11,6 @@ const {
   updateNewsById,
   getNewsById,
   getAllNews,
-  searchNews,
   deleteNewsById
 } = require('../controllers/news-controller');
 
@@ -32,7 +31,6 @@ app.use(express.json());
 describe('News Controller', () => {
   afterEach(() => {
     jest.clearAllMocks();
-    mockFs.restore();
   });
 
   describe('createNews', () => {
@@ -335,7 +333,6 @@ describe('News Controller', () => {
       expect(res.json).toHaveBeenCalledWith({ error: 'Failed to fetch news' });
     });
   });
-
 
   describe('deleteNewsById', () => {
     it('should delete a specific news item by ID', async () => {

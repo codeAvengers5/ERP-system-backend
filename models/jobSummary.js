@@ -29,11 +29,11 @@ const jobSummarySchema = new mongoose.Schema(
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
-    expireAt: {
-      type: Date,
-      default: Date.now,
-      index: { expires: "30d" },
-    },
+    // expireAt: {
+    //   type: Date,
+    //   default: Date.now,
+    //   index: { expires: "30d" },
+    // },
   },
   { timestamps: true }
 );

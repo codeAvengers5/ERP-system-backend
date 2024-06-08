@@ -14,7 +14,7 @@ const {
 } = require("../helpers/sendConfirmationEmail");
 let cookieOptions = {
   httpOnly: true,
-  secure:"production",
+  secure: "production",
   sameSite: "strict",
   path: "/",
 };
@@ -75,14 +75,12 @@ async function RegisterSiteUser(req, res, next) {
         message: "Please confirm/verify your email.",
       });
     }
-    console.log("Success", token);
   } catch (error) {
     return res.status(500).json(error);
   }
 }
 async function ConfirmEmail(req, res, next) {
   const { confirmationCode } = req.body;
-  console.log("confirm", confirmationCode);
   try {
     const user = await User.findOne({ confirmationCode });
     if (!user) {
@@ -98,13 +96,11 @@ async function ConfirmEmail(req, res, next) {
       .status(200)
       .json({ success: true, message: "Your account has been confirmed" });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: "Internal server error" });
   }
 }
 async function LoginSiteUser(req, res, next) {
   const { email, password, rememberMe } = req.body;
-  console.log("Login Site User", req.body);
   if (!email || !password)
     return res
       .status(400)
@@ -119,7 +115,7 @@ async function LoginSiteUser(req, res, next) {
   try {
     try {
       const accountId = account._id;
-
+      
       const email = account.email;
       const username = account.username;
       const payload = {
@@ -133,9 +129,8 @@ async function LoginSiteUser(req, res, next) {
         sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
-      res.status(200).json({ userInfo: userInfo, message: "LoggedIn" });
+      res.status(200).json({ siteuserInfo: userInfo, message: "LoggedIn" });
     } catch (error) {
-      console.log("Login failed with error : ", error);
       return res.status(500).json({ Error: error });
     }
 
@@ -148,8 +143,8 @@ async function LoginSiteUser(req, res, next) {
     res.cookie("jwt", token, cookieOptions);
     res.status(200).json({ token: token, message: "LoggedIn" });
   } catch (error) {
-    console.log("Login failed with error : ", error);
-    // return res.status(500).json({ Error: error });
+    // console.log("Login failed with error : ", error);
+    return res.status(500).json({ Error: error });
   }
 }
 async function ForgotPassword(req, res, next) {
@@ -162,7 +157,9 @@ async function ForgotPassword(req, res, next) {
   } else {
     try {
       const token = await generateToken({ id: user._id });
-      if (!token) return next({ status: 500 });
+      if (!token) {
+        return res.status(500).json({ error: "Internal server error" });
+      }
       res.cookie("jwt", token, {
         httpOnly: true,
         secure: false,
@@ -173,7 +170,7 @@ async function ForgotPassword(req, res, next) {
         .status(200)
         .json({ mgs: "verfiy with the link", token: token, id: user._id });
     } catch (err) {
-      console.log(err);
+      return res.status(500).json({ error: "Internal server error" });
     }
   }
 }
@@ -196,10 +193,7 @@ async function ResetPassword(req, res, next) {
           return next(new Error("Employee not found"));
         }
         res.status(200).json({ mgs: "Password has been reset successfully" });
-
-        console.log("Password has been reset successfully");
       } catch (error) {
-        console.error("Error resetting password:", error);
         res.status(500).json({ message: error });
       }
     }
@@ -226,8 +220,7 @@ async function UpdatePassword(req, res, next) {
     res
       .status(200)
       .json({ success: true, message: "Password updated successfully" });
-  } catch (error) {
-    console.error(error);
+  } catch (error) {;
     res.status(500).json({ error: "Internal server error" });
   }
 }

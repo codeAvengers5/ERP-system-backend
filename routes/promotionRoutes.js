@@ -17,7 +17,7 @@ router.post(
  uploadImages.array("images", 10),
   createPromotion
 );
-router.get("/getAllPromotions", isAuthenticated, getAllPromotions);
+router.get("/getAllPromotions", getAllPromotions);
 router.get(
   "/getPromotionById/:id",
   isAuthenticated,
