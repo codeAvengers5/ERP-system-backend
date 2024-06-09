@@ -31,80 +31,31 @@ const registerValidator = joi.object({
     )
     .required(),
 });
-async function RegisterSiteUser(req, res, next) {
-  const { username, email, password } = req.body;
-  const hashedPassword = await hashPassword(password);
-  if (!hashedPassword) return next({ status: 500 });
-  const validation = registerValidator.validate(req.body);
-  if (validation.error) {
-    const errorDetails = validation.error.details
-      .map((d) => d.message)
-      .join("<br>");
-    res.send(`<h2>Vaildation Error: </h2>${errorDetails}`);
-    return;
-  }
-  try {
-    const userExist = await User.findOne({ email: email });
-    if (userExist) return res.status(400).json({ error: 'Username already exists' });
-      const siteUser = new User({
-        username,
-        email,
-        password: hashedPassword,
-      });
-      await siteUser.save();
-      const confirmationCode = generateConfirmationCode();
-      siteUser.confirmationCode = confirmationCode;
-
-      await User.findByIdAndUpdate(newUser._id, {confirmationCode });
-
-      await sendConfirmationEmail(
-        siteUser.email,
-        confirmationCode,
-        siteUser.username
-      );
-      // if (!siteUser) return res.status(500).json(error.details[0].message);
-      const token = await generateToken({ id: siteUser._id });
-      if (!token) return next({ status: 500 });
-      res.cookie("jwt", token, {
-        httpOnly: true,
-        secure: false,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
-      res.status(201).json({
-        success: true,
-        siteUser,
-        message: "Please confirm/verify your email.",
-      });
-  } catch (err) {
-    if (err.code === 11000) {
-      return res.status(400).json({ error: 'Username already exists' });
-    } 
-   }
-    res.status(500).json({ error: 'An error occurred while registering the user' });
-  
-}
 
 async function RegisterSiteUser(req, res, next) {
   try {
     const { username, email, password } = req.body;
+    console.log('Received request body:', req.body);
     const hashedPassword = await hashPassword(password);
 
     if (!hashedPassword) {
+      console.log('Error hashing password');
       return res.status(500).json({ error: 'Error hashing password' });
     }
-
     const validation = registerValidator.validate(req.body);
 
     if (validation.error) {
       const errorDetails = validation.error.details
         .map((d) => d.message)
         .join('<br>');
+      console.log('Validation error:', errorDetails);
       return res.status(400).json({ error: errorDetails });
     }
+    const existingUser = await User.findOne({ email: email });
 
-    const existingUser = await User.findOne({ email });
 
     if (existingUser) {
+      console.log('Email already exists:', existingUser);
       return res.status(400).json({ error: 'Email already exists' });
     }
 
@@ -115,23 +66,28 @@ async function RegisterSiteUser(req, res, next) {
     });
 
     await newUser.save();
+    console.log('User created:', newUser);
 
     const confirmationCode = generateConfirmationCode();
     await User.findByIdAndUpdate(newUser._id, { confirmationCode });
+    console.log('Confirmation code set:', confirmationCode);
 
     await sendConfirmationEmail(newUser.email, confirmationCode, newUser.username);
+    console.log('Confirmation email sent to:', newUser.email);
 
     const token = await generateToken({ id: newUser._id });
 
     if (!token) {
+      console.error('Error generating authentication token');
       return res.status(500).json({ error: 'Error generating authentication token' });
     }
 
     res.cookie('jwt', token, {
       httpOnly: true,
-      secure: false, // Set to true in production
+      secure: false,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+    console.log('Token set in cookie');
 
     res.status(201).json({
       success: true,
@@ -139,12 +95,16 @@ async function RegisterSiteUser(req, res, next) {
       message: 'Please confirm/verify your email.',
     });
   } catch (err) {
+    console.error('An error occurred:', err);
+
     if (err.code === 11000) {
       return res.status(400).json({ error: 'Email already exists' });
     }
+
     return res.status(500).json({ error: 'An error occurred while registering the user' });
   }
 }
+
 
 
 async function ConfirmEmail(req, res, next) {
