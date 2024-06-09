@@ -166,12 +166,12 @@ async function checkIn() {
         const attendanceRecord = {
           date: currentDate,
           check_in: null,
-          status: "No record",
+          status: "Weekend/Holiday",
         };
         if (attendance) {
           attendance.attendanceHistory.push(attendanceRecord);
           await attendance.save();
-          console.log("attendnance recorded");
+          console.log("attendance recorded");
         } else {
           const newAttendance = new Attendance({
             employee_id: employee._id,
@@ -186,7 +186,7 @@ async function checkIn() {
     }
   }
   try {
-    await sheets.spreadsheets.values.clear({
+    sheets.spreadsheets.values.clear({
       auth,
       spreadsheetId: SPREADSHEET_ID,
       range: RANGE,
@@ -202,7 +202,7 @@ async function schedulePeriodicRead(auth) {
   setInterval(async () => {
     const currentDate = new Date();
     const currentHour = currentDate.getHours();
-    if (currentHour >= 8 && currentHour < 18) {
+    if (currentHour >= 7 && currentHour < 24) {
       try {
         await checkIn();
         console.log('Reading from spreadsheet...');
@@ -217,10 +217,8 @@ async function schedulePeriodicRead(auth) {
 async function performCheckIn(res) {
   try {
     const auth = await authorizeSheets();
-    // await checkIn(auth);
-    await checkIn();
-    console.log('Check-in performed successfully.');
     schedulePeriodicRead(auth); 
+    console.log('Check-in performed successfully.');
     } catch (error) {
     console.error('Error performing check-in:', error);
   }
@@ -241,24 +239,24 @@ async function fetchAttendanceInfo(req, res) {
       const employeeInfo = await EmployeeInfo.findOne({ employee_id: employeeId }).exec();
       if (!employeeInfo) return res.status(404).json({ message: "Employee info not found" });
 
-      // res.status(200).json({
-      //   employee: employee,
-      //   employeeInfo:employeeInfo,
-      //   role: role,
-      //   arrivaltime: `${mostRecentDocument.attendanceHistory[0].check_in.getHours()}:${mostRecentDocument.attendanceHistory[0].check_in.getMinutes()}`
-      // });
-      let arrivaltime = 'N/A';
-      console.log(mostRecentDocument.attendanceHistory)
-if (mostRecentDocument.attendanceHistory[0] && mostRecentDocument.attendanceHistory[0].check_in) {
-  arrivaltime = `${mostRecentDocument.attendanceHistory[0].check_in.getHours()}:${mostRecentDocument.attendanceHistory[0].check_in.getMinutes()}`;
-}
+      res.status(200).json({
+        employee: employee,
+        employeeInfo:employeeInfo,
+        role: role,
+        arrivaltime: `${mostRecentDocument.attendanceHistory[0].check_in.getHours()}:${mostRecentDocument.attendanceHistory[0].check_in.getMinutes()}`
+      });
+//       let arrivaltime = 'N/A';
+//       console.log(mostRecentDocument.attendanceHistory)
+// if (mostRecentDocument.attendanceHistory[0] && mostRecentDocument.attendanceHistory[0].check_in) {
+//   arrivaltime = `${mostRecentDocument.attendanceHistory[0].check_in.getHours()}:${mostRecentDocument.attendanceHistory[0].check_in.getMinutes()}`;
+// }
 
-res.status(200).json({
-  employee: employee,
-  employeeInfo: employeeInfo,
-  role: role,
-  arrivaltime: arrivaltime
-});
+// res.status(200).json({
+//   employee: employee,
+//   employeeInfo: employeeInfo,
+//   role: role,
+//   arrivaltime: arrivaltime
+// });
       
     } else {
       console.log('No attendance records found.');
@@ -431,7 +429,6 @@ async function getAttendanceCounts(req, res) {
           present: { $sum: { $cond: [{ $eq: ["$attendanceHistory.status", "Present"] }, 1, 0] } },
           late: { $sum: { $cond: [{ $eq: ["$attendanceHistory.status", "Late"] }, 1, 0] } },
           leave: { $sum: { $cond: [{ $eq: ["$attendanceHistory.status", "on Leave"] }, 1, 0] } },
-
         },
       },
     ]).exec();

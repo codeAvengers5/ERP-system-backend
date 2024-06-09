@@ -9,8 +9,6 @@ const {
 const {
   isAuthenticated,
   isItAdmin,
-  isEmployee,
-  isHRAdmin,
 } = require("../middleware/auth");
 const router = express.Router();
 router.get("/users", isAuthenticated, isItAdmin, GetAllUsers);
@@ -24,11 +22,10 @@ router.put(
 router.put(
   "/updateemployee/:id",
   isAuthenticated,
-  isEmployee,
   UpdateEmployeeInfo
 );
 router.get("/users", isAuthenticated, isItAdmin, GetAllUsers);
-router.get("/getemployee/:id",isAuthenticated, isHRAdmin, FetchById);
-router.get("/getemployeeInfo/:id",isAuthenticated, isItAdmin, FetchById);
+// router.get("/getemployee/:id",isAuthenticated, isHRAdmin, FetchById);
+// router.get("/getemployeeInfo/:id",isAuthenticated, isItAdmin, FetchById);
 router.post("/printid", isAuthenticated, isItAdmin, PrintID);
 module.exports = router;

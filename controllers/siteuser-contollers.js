@@ -46,14 +46,12 @@ async function RegisterSiteUser(req, res, next) {
       const errorDetails = validation.error.details
         .map((d) => d.message)
         .join('<br>');
-      console.log('Validation error:', errorDetails);
       return res.status(400).json({ error: errorDetails });
     }
     const existingUser = await User.findOne({ email: email });
 
 
     if (existingUser) {
-      console.log('Email already exists:', existingUser);
       return res.status(400).json({ error: 'Email already exists' });
     }
 
@@ -67,15 +65,12 @@ async function RegisterSiteUser(req, res, next) {
 
     const confirmationCode = generateConfirmationCode();
     await User.findByIdAndUpdate(newUser._id, { confirmationCode });
-    console.log('Confirmation code set:', confirmationCode);
 
     await sendConfirmationEmail(newUser.email, confirmationCode, newUser.username);
-    console.log('Confirmation email sent to:', newUser.email);
 
     const token = await generateToken({ id: newUser._id });
 
     if (!token) {
-      console.error('Error generating authentication token');
       return res.status(500).json({ error: 'Error generating authentication token' });
     }
 
@@ -84,7 +79,7 @@ async function RegisterSiteUser(req, res, next) {
       secure: false,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    console.log('Token set in cookie');
+    // console.log('Token set in cookie');
 
     res.status(201).json({
       success: true,
@@ -92,7 +87,7 @@ async function RegisterSiteUser(req, res, next) {
       message: 'Please confirm/verify your email.',
     });
   } catch (err) {
-    console.error('An error occurred:', err);
+    // console.error('An error occurred:', err);
 
     if (err.code === 11000) {
       return res.status(400).json({ error: 'Email already exists' });
@@ -109,7 +104,6 @@ async function ConfirmEmail(req, res, next) {
   try {
     const user = await User.findOne({ confirmationCode });
     if (!user) {
-      // return next(new Error("Invalid confirmation code/User not found"));
       return res.status(404).json({error:"Invalid confirmation code/User not found"})
     }
     user.isConfirmed = true;

@@ -79,7 +79,7 @@ async function RegisterAdminUser(req, res, next) {
     start_date,
     salary,
     gender,
-    phone_no
+    phone_no,
   } = req.body;
   const images = req.files["images"];
   const image_profile = req.files["image_profile"];
@@ -165,19 +165,36 @@ async function RegisterAdminUser(req, res, next) {
         const hr = await Role.findOne({ role_name: "hradmin" });
         const manager = await Role.findOne({ role_name: "manager" });
 
+        if (!hr || !manager) {
+          throw new Error("HR or Manager role not found");
+        }
+
         const notifications = [];
-        const hrNotification = new Notification({
-          recipient: "hradmin",
-          message: `New Employee has been created ${employee.full_name}`,
-          employeeId: hr.employee_id,
-        });
-        notifications.push(hrNotification);
-        const managerNotification = new Notification({
-          recipient: "manager",
-          message: `New Employee has been created ${employee.full_name}`,
-          employeeId: manager.employee_id,
-        });
-        notifications.push(managerNotification);
+
+        if (hr.employee_id) {
+          const hrNotification = new Notification({
+            recipient: "hradmin",
+            message: `New Employee has been created ${employee.full_name}`,
+            employeeId: hr.employee_id,
+          });
+          notifications.push(hrNotification);
+        } else {
+          console.log("HR employee_id is null, skipping HR notification.");
+        }
+
+        if (manager.employee_id) {
+          const managerNotification = new Notification({
+            recipient: "manager",
+            message: `New Employee has been created ${employee.full_name}`,
+            employeeId: manager.employee_id,
+          });
+          notifications.push(managerNotification);
+        } else {
+          console.log(
+            "Manager employee_id is null, skipping Manager notification."
+          );
+        }
+
         for (const notification of notifications) {
           await notification.save();
         }
@@ -189,7 +206,7 @@ async function RegisterAdminUser(req, res, next) {
     }
   } catch (error) {
     console.error("Error creating employee account:", error);
-    // return res.status(500).json({ error: error });
+    next(error)
   }
 }
 async function LoginAdminUser(req, res, next) {
@@ -559,7 +576,9 @@ async function UpdatePassword(req, res, next) {
     }
     const { error } = passwordSchema.validate(newPassword);
     if (error) {
-      return res.status(400).json({ error: "New password does not meet the required pattern" });
+      return res
+        .status(400)
+        .json({ error: "New password does not meet the required pattern" });
     }
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
     employee.password = hashedNewPassword;
@@ -573,15 +592,16 @@ async function UpdatePassword(req, res, next) {
   }
 }
 async function LogoutAdminUser(req, res, next) {
-  try {
-    const userId = req.user.id;
-    await Employee.updateOne({ _id: userId }, { is2faVerified: false });
-    res.clearCookie("jwt");
-    res.status(200).json({ message: "Logged Out" });
-  } catch (error) {
-    console.log("Logout failed with error: ", error);
-    // return res.status(500).json({ Error: error });
-  }
+  res
+    .clearCookie("token", {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+      path: "/",
+    })
+    .status(200)
+    .json("User has been logged out.");
+  res.status(200).json({ message: "Logged Out" });
 }
 
 module.exports = {

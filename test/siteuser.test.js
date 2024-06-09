@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/user");
 const hashPassword = require("../middleware/hashPassword");
 const generateToken = require("../middleware/generateToken");
+const Joi = require("joi")
 const {
   generateConfirmationCode,
 } = require("../helpers/generateConfirmationCode");
@@ -89,18 +90,43 @@ describe("User Controller", () => {
       });
     });
 
-    it("should return validation errors", async () => {
-      req.body = {
-        username: "testuser",
-        email: "invalidemail",
-        password: "short",
-      };
-
-      await RegisterSiteUser(req, res, next);
-
-      expect(res.send).toHaveBeenCalledWith(expect.stringContaining("Vaildation Error"));
-    });
-
+	it("should return validation errors", async () => {
+		// Arrange
+		const validationError = {
+		  error: {
+			details: [
+			  {
+				message: "Validation error message",
+			  },
+			],
+		  },
+		};
+	  
+		const validateMock = jest.spyOn(Joi, 'validate')
+		  .mockReturnValue(validationError);
+	  
+		const req = {
+		  body: {
+			// sample request body
+		  },
+		};
+	  
+		const res = {
+		  status: jest.fn().mockReturnThis(),
+		  json: jest.fn(),
+		};
+	  
+		const next = jest.fn();
+	  
+		// Act
+		await RegisterSiteUser(req, res, next);
+	  
+		// Assert
+		expect(validateMock).toHaveBeenCalledWith(req.body, expect.any(Function));
+		expect(res.status).toHaveBeenCalledWith(400);
+		expect(res.json).toHaveBeenCalledWith(validationError);
+		expect(next).not.toHaveBeenCalled();
+	  });
     it("should return error if email already exists", async () => {
       User.findOne.mockResolvedValue({ email: "test@example.com" });
 
@@ -112,24 +138,39 @@ describe("User Controller", () => {
 
       await RegisterSiteUser(req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith("Email already exist");
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({error:"Email already exists"});
     });
 
-    it("should return error if hashing password fails", async () => {
-      hashPassword.mockResolvedValue(null);
-
-      req.body = {
-        username: "testuser",
-        email: "test@example.com",
-        password: "Test1234!",
-      };
-
-      await RegisterSiteUser(req, res, next);
-
-      expect(next).toHaveBeenCalledWith({ status: 500 });
-    });
-
+	it("should return error if hashing password fails", async () => {
+		// Arrange
+		const hashPasswordMock = jest.spyOn(bcrypt, 'hash')
+		  .mockImplementation(() => {
+			throw new Error('Error hashing password');
+		  });
+	  
+		const req = {
+		  body: {
+			// sample request body
+		  },
+		};
+	  
+		const res = {
+		  status: jest.fn().mockReturnThis(),
+		  json: jest.fn(),
+		};
+	  
+		const next = jest.fn();
+	  
+		// Act
+		await RegisterSiteUser(req, res, next);
+	  
+		// Assert
+		expect(hashPasswordMock).toHaveBeenCalled();
+		expect(res.status).toHaveBeenCalledWith(500);
+		expect(res.json).toHaveBeenCalledWith({ error: 'Error hashing password' });
+		expect(next).not.toHaveBeenCalled();
+	  });
     it("should return error if token generation fails", async () => {
       User.findOne.mockResolvedValue(null);
       hashPassword.mockResolvedValue("hashedpassword");
@@ -143,8 +184,9 @@ describe("User Controller", () => {
 
       await RegisterSiteUser(req, res, next);
 
-      expect(next).toHaveBeenCalledWith({ status: 500 });
-    });
+	  expect(res.status).toHaveBeenCalledWith(500);
+	  expect(res.json).toHaveBeenCalledWith({ error: 'Error generating authentication token' });
+		  });
   });
 describe("ConfirmEmail", () => {
 	let req, res, next;
@@ -182,22 +224,62 @@ describe("ConfirmEmail", () => {
 	});
   
 	it("should handle invalid confirmation code", async () => {
-	  User.findOne.mockResolvedValue(null);
+		// Arrange
+		const findOneMock = jest.spyOn(User, 'findOne')
+		  .mockReturnValue(null);
+	  
+		const req = {
+		  body: {
+			confirmationCode: "confirmationCode",
+		  },
+		};
+	  
+		const res = {
+		  status: jest.fn().mockReturnThis(),
+		  json: jest.fn(),
+		};
+	  
+		const next = jest.fn();
+	  
+		// Act
+		await ConfirmEmail(req, res, next);
+	  
+		// Assert
+		expect(findOneMock).toHaveBeenCalledWith({ confirmationCode: "confirmationCode" });
+		expect(res.status).toHaveBeenCalledWith(404);
+		expect(res.json).toHaveBeenCalledWith({ error: "Invalid confirmation code/User not found" });
+		expect(next).not.toHaveBeenCalled();
+	  });
   
-	  await ConfirmEmail(req, res, next);
-  
-	  expect(User.findOne).toHaveBeenCalledWith({ confirmationCode: "confirmationCode" });
-	  expect(next).toHaveBeenCalledWith(new Error("Invalid confirmation code/User not found"));
-	});
-  
-	it("should handle errors gracefully", async () => {
-	  User.findOne.mockRejectedValue(new Error("Database error"));
-  
-	  await ConfirmEmail(req, res, next);
-  
-	  expect(res.status).toHaveBeenCalledWith(500);
-	  expect(res.json).toHaveBeenCalledWith({ error: "Internal server error" });
-	});
+	  it("should handle errors gracefully", async () => {
+		// Arrange
+		const findOneMock = jest.spyOn(User, 'findOne')
+		  .mockImplementation(() => {
+			throw new Error('Some error occurred');
+		  });
+	  
+		const req = {
+		  body: {
+			confirmationCode: "confirmationCode",
+		  },
+		};
+	  
+		const res = {
+		  status: jest.fn().mockReturnThis(),
+		  json: jest.fn(),
+		};
+	  
+		const next = jest.fn();
+	  
+		// Act
+		await ConfirmEmail(req, res, next);
+	  
+		// Assert
+		expect(findOneMock).toHaveBeenCalledWith({ confirmationCode: "confirmationCode" });
+		expect(res.status).toHaveBeenCalledWith(500);
+		expect(res.json).toHaveBeenCalledWith({ error: "Internal server error" });
+		expect(next).not.toHaveBeenCalled();
+	  });
   });
   describe("LoginSiteUser", () => {
 	let req, res, next;
