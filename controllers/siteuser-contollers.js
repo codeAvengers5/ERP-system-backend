@@ -109,7 +109,8 @@ async function ConfirmEmail(req, res, next) {
   try {
     const user = await User.findOne({ confirmationCode });
     if (!user) {
-      return next(new Error("Invalid confirmation code/User not found"));
+      // return next(new Error("Invalid confirmation code/User not found"));
+      return res.status(404).json({error:"Invalid confirmation code/User not found"})
     }
     user.isConfirmed = true;
     user.confirmationCode = "Confirmed";

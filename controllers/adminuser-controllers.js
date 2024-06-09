@@ -559,7 +559,7 @@ async function UpdatePassword(req, res, next) {
     }
     const { error } = passwordSchema.validate(newPassword);
     if (error) {
-      return res.status(400).json({ error: error.details[0].message });
+      return res.status(400).json({ error: "New password does not meet the required pattern" });
     }
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
     employee.password = hashedNewPassword;
