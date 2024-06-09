@@ -35,11 +35,9 @@ const registerValidator = joi.object({
 async function RegisterSiteUser(req, res, next) {
   try {
     const { username, email, password } = req.body;
-    console.log('Received request body:', req.body);
     const hashedPassword = await hashPassword(password);
 
     if (!hashedPassword) {
-      console.log('Error hashing password');
       return res.status(500).json({ error: 'Error hashing password' });
     }
     const validation = registerValidator.validate(req.body);
@@ -66,7 +64,6 @@ async function RegisterSiteUser(req, res, next) {
     });
 
     await newUser.save();
-    console.log('User created:', newUser);
 
     const confirmationCode = generateConfirmationCode();
     await User.findByIdAndUpdate(newUser._id, { confirmationCode });
