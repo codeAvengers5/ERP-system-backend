@@ -68,47 +68,57 @@ async function JobApply(req, res) {
   const { full_name, phone_no } = req.body;
   const cv = req.file;
   const userId = req.user.id;
+
   if (!userId) {
-    return res.status(403).json({ message: "you should be logged in first" });
+    return res.status(403).json({ message: "You should be logged in first" });
   }
+
   if (!(await JobPost.findOne({ _id: id }))) {
     return res.status(404).json({
       status: "fail",
       message: "Job does not exist",
     });
   }
+
   const { error } = jobPostValidator.validate({
     full_name,
     phone_no,
     cv,
   });
+
   if (error) {
-    // console.log("error is here");
     return res.status(400).json({ error: error.details[0].message });
   }
+
   try {
     const existingApplication = await JobSummary.findOne({
       job_id: id,
       user_id: userId,
     });
+
     if (existingApplication) {
       return res.status(409).json({
         message: "You have already applied to this job",
         value: { appliedUser: existingApplication },
       });
     }
+
     const path = cv.path;
+
     cloudinary.uploader.upload(
       path,
       { resource_type: "raw" },
       async function (err, result) {
         if (err) {
-          return res.json(
-            "File format is wrong! Only pdf files are supported."
-          );
+          return res.json({
+            message: "File format is wrong! Only PDF files are supported.",
+          });
         }
+
         fs.unlinkSync(path);
+
         const cvUrl = result.url;
+
         const appliedUser = new JobSummary({
           job_id: id,
           full_name: full_name,
@@ -117,26 +127,59 @@ async function JobApply(req, res) {
           user_id: userId,
           status: "pending",
         });
+
         await appliedUser.save();
+
         res.status(201).json({
-          message: "You have Successfully applied to the job application",
+          message: "You have successfully applied to the job application",
           value: { appliedUser },
         });
-        const job = await JobPost.findOne({ _id: id });
-        const hr = await Role.findOne({ role_name: "hradmin" });
-        const notification = new Notification({
-          recipient: "hradmin",
-          message: `${appliedUser.full_name} has been applied to ${job.title} application`,
-          employeeId: hr.employee_id,
-        });
-        await notification.save();
+
+        // Notify HR
+        // await notifyHR(id, appliedUser);
       }
     );
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ error: error });
+    return res.status(500).json({ error: error.message });
   }
 }
+
+async function notifyHR(jobId, appliedUser) {
+  console.log("metoal")
+  try {
+    const job = await JobPost.findById(jobId);
+    if (!job) {
+      console.log(`Job with id ${jobId} not found`);
+      return;
+    }
+
+    const hr = await Role.findOne({ role_name: "hradmin" });
+    if (!hr) {
+      console.log(`HR role 'hradmin' not found`);
+      return;
+    }
+    const id = hr.employee_id
+    if (!id) {
+      console.log(`HR role 'hradmin' does not have an employee_id`);
+      return;
+    }
+
+    const notification = new Notification({
+      recipient: "hradmin",
+      message: `${appliedUser.full_name} has been applied to ${job.title} application`,
+      employeeId: id,
+    });
+
+    await notification.save();
+    console.log(
+      `Notification for ${appliedUser.full_name} applied to ${job.title} created successfully`
+    );
+  } catch (error) {
+    console.log('Error creating notification:', error);
+  }
+}
+
 async function ViewJobSummary(req, res) {
   try {
     const jobSummary = await JobSummary.find({});
@@ -151,7 +194,7 @@ async function ViewJobSummary(req, res) {
         })
       );
       res.status(200).json(jobs);
-    } 
+    }
     // else {
     //   res.status(200).json([]);
     // }
