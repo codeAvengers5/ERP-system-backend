@@ -1,16 +1,16 @@
 const Attendance = require("../models/attendance");
 const Employee = require("../models/employee");
-const fs = require('fs').promises;
-const moment = require('moment')
-const path = require('path');
-const process = require('process');
-const { authenticate } = require('@google-cloud/local-auth');
-const { google } = require('googleapis');
+const fs = require("fs").promises;
+const moment = require("moment");
+const path = require("path");
+const process = require("process");
+const { authenticate } = require("@google-cloud/local-auth");
+const { google } = require("googleapis");
 const EmployeeInfo = require("../models/employeeInfo");
 const Role = require("../models/role");
-const CREDENTIALS_PATH = path.join(process.cwd(), 'helpers/credentials.json');
-const SPREADSHEET_ID = '15v_s9gD7WoodxW7nzRsaHfvYnLzX0EjRsydju7h1FAw';
-const RANGE = 'Sheet1!A1:A';
+const CREDENTIALS_PATH = path.join(process.cwd(), "helpers/credentials.json");
+const SPREADSHEET_ID = "15v_s9gD7WoodxW7nzRsaHfvYnLzX0EjRsydju7h1FAw";
+const RANGE = "Sheet1!A1:A";
 let storedIDs = [];
 async function getStoredIDs() {
   return storedIDs;
@@ -21,7 +21,9 @@ async function storeIDs(ids) {
 
 async function loadSavedCalendarCredentialsIfExist() {
   try {
-    const content = await fs.readFile(path.join(process.cwd(), 'helpers/calendar-token.json'));
+    const content = await fs.readFile(
+      path.join(process.cwd(), "helpers/calendar-token.json")
+    );
     const credentials = JSON.parse(content);
     return google.auth.fromJSON(credentials);
   } catch (err) {
@@ -31,7 +33,9 @@ async function loadSavedCalendarCredentialsIfExist() {
 
 async function loadSavedSheetsCredentialsIfExist() {
   try {
-    const content = await fs.readFile(path.join(process.cwd(), 'helpers/token.json'));
+    const content = await fs.readFile(
+      path.join(process.cwd(), "helpers/token.json")
+    );
     const credentials = JSON.parse(content);
     return google.auth.fromJSON(credentials);
   } catch (err) {
@@ -44,12 +48,15 @@ async function saveCalendarCredentials(client) {
   const keys = JSON.parse(content);
   const key = keys.installed || keys.web;
   const payload = JSON.stringify({
-    type: 'authorized_user',
+    type: "authorized_user",
     client_id: key.client_id,
     client_secret: key.client_secret,
     refresh_token: client.credentials.refresh_token,
   });
-  await fs.writeFile(path.join(process.cwd(), 'helpers/calendar-token.json'), payload);
+  await fs.writeFile(
+    path.join(process.cwd(), "helpers/calendar-token.json"),
+    payload
+  );
 }
 
 async function saveSheetsCredentials(client) {
@@ -57,12 +64,12 @@ async function saveSheetsCredentials(client) {
   const keys = JSON.parse(content);
   const key = keys.installed || keys.web;
   const payload = JSON.stringify({
-    type: 'authorized_user',
+    type: "authorized_user",
     client_id: key.client_id,
     client_secret: key.client_secret,
     refresh_token: client.credentials.refresh_token,
   });
-  await fs.writeFile(path.join(process.cwd(), 'helpers/token.json'), payload);
+  await fs.writeFile(path.join(process.cwd(), "helpers/token.json"), payload);
 }
 async function authorizeCalendar() {
   let client = await loadSavedCalendarCredentialsIfExist();
@@ -70,7 +77,7 @@ async function authorizeCalendar() {
     return client;
   }
   client = await authenticate({
-    scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
+    scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
     keyfilePath: CREDENTIALS_PATH,
   });
   if (client.credentials) {
@@ -85,7 +92,7 @@ async function authorizeSheets() {
     return client;
   }
   client = await authenticate({
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     keyfilePath: CREDENTIALS_PATH,
   });
   if (client.credentials) {
@@ -98,8 +105,8 @@ async function checkIn() {
   const auth = await authorizeSheets();
   const calendarAuth = await authorizeCalendar();
 
-  const sheets = google.sheets({ version: 'v4', auth: auth });
-  const calendar = google.calendar({ version: 'v3', auth: calendarAuth });
+  const sheets = google.sheets({ version: "v4", auth: auth });
+  const calendar = google.calendar({ version: "v3", auth: calendarAuth });
 
   const data = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
@@ -107,36 +114,38 @@ async function checkIn() {
   });
   const rows = data.data.values;
   if (!rows || rows.length === 0) {
-    console.log('No data found.');
+    console.log("No data found.");
     return;
   }
-  console.log("hghgh",rows)
+  console.log("hghgh", rows);
   const storedIDs = await getStoredIDs();
-  const newIDs = rows.map(row => row[0]).filter(id => !storedIDs.includes(id));
+  const newIDs = rows
+    .map((row) => row[0])
+    .filter((id) => !storedIDs.includes(id));
   for (const newID of newIDs) {
     try {
       const employee = await Employee.findById(newID);
       if (!employee) {
-        throw new Error('Employee not found');
+        throw new Error("Employee not found");
       }
-      console.log("employee",employee);
+      console.log("employee", employee);
 
       const currentDate = new Date();
       const dayOfWeek = currentDate.getDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // 0 = Sunday, 6 = Saturday
       const calendarEvents = await calendar.events.list({
-        calendarId: 'primary',
+        calendarId: "primary",
         timeMin: currentDate.toISOString(),
         timeMax: currentDate.toISOString(),
         singleEvents: true,
       });
-      console.log("events",calendarEvents);
+      console.log("events", calendarEvents);
       const isHoliday = calendarEvents.data.items.length > 0;
 
       const attendance = await Attendance.findOne({
         employee_id: employee._id,
       });
-      
+
       if (!isWeekend && !isHoliday) {
         if (!attendance) {
           const newAttendance = new Attendance({
@@ -145,7 +154,7 @@ async function checkIn() {
           await newAttendance.checkIn();
 
           const event = {
-            summary: 'Check-in',
+            summary: "Check-in",
             start: {
               dateTime: new Date().toISOString(),
             },
@@ -154,8 +163,8 @@ async function checkIn() {
             },
             description: `Check-in recorded for ${employee.name}`,
           };
-           calendar.events.insert({
-            calendarId: 'primary',
+          calendar.events.insert({
+            calendarId: "primary",
             resource: event,
           });
         } else {
@@ -175,13 +184,13 @@ async function checkIn() {
         } else {
           const newAttendance = new Attendance({
             employee_id: employee._id,
-            attendanceHistory: [attendanceRecord]
+            attendanceHistory: [attendanceRecord],
           });
           await newAttendance.save();
         }
       }
     } catch (error) {
-      console.error('Error fetching employee info:', error);
+      console.error("Error fetching employee info:", error);
       throw error;
     }
   }
@@ -196,7 +205,6 @@ async function checkIn() {
   } catch (error) {
     console.error("Error fetching employee info:", error);
   }
-  
 }
 async function schedulePeriodicRead(auth) {
   setInterval(async () => {
@@ -205,22 +213,24 @@ async function schedulePeriodicRead(auth) {
     if (currentHour >= 7 && currentHour < 24) {
       try {
         await checkIn();
-        console.log('Reading from spreadsheet...');
+        console.log("Reading from spreadsheet...");
       } catch (error) {
-        console.error('Error reading from spreadsheet:', error);
+        console.error("Error reading from spreadsheet:", error);
       }
     } else {
-      console.log('Current time is outside the desired range. Skipping reading from the spreadsheet.');
+      console.log(
+        "Current time is outside the desired range. Skipping reading from the spreadsheet."
+      );
     }
   }, 5000);
 }
 async function performCheckIn(res) {
   try {
     const auth = await authorizeSheets();
-    schedulePeriodicRead(auth); 
-    console.log('Check-in performed successfully.');
-    } catch (error) {
-    console.error('Error performing check-in:', error);
+    schedulePeriodicRead(auth);
+    console.log("Check-in performed successfully.");
+  } catch (error) {
+    console.error("Error performing check-in:", error);
   }
 }
 async function fetchAttendanceInfo(req, res) {
@@ -230,62 +240,64 @@ async function fetchAttendanceInfo(req, res) {
       const employeeId = mostRecentDocument.employee_id;
 
       const employee = await Employee.findOne({ _id: employeeId }).exec();
-      if (!employee) return res.status(404).json({ message: "Employee Not Found" });
+      if (!employee)
+        return res.status(404).json({ message: "Employee Not Found" });
       const roleId = employee.role_id.toString();
       const role = await Role.findOne({ _id: roleId });
       if (!role) {
         return res.status(404).json({ message: "Role Not Found" });
       }
-      const employeeInfo = await EmployeeInfo.findOne({ employee_id: employeeId }).exec();
-      if (!employeeInfo) return res.status(404).json({ message: "Employee info not found" });
-
+      const employeeInfo = await EmployeeInfo.findOne({
+        employee_id: employeeId,
+      }).exec();
+      if (!employeeInfo)
+        return res.status(404).json({ message: "Employee info not found" });
+      let arrivaltime = "N/A";
+      if (
+        mostRecentDocument.attendanceHistory[0] &&
+        mostRecentDocument.attendanceHistory[0].check_in
+      ) {
+        arrivaltime = `${mostRecentDocument.attendanceHistory[0].check_in.getHours()}:${mostRecentDocument.attendanceHistory[0].check_in.getMinutes()}`;
+      }
       res.status(200).json({
         employee: employee,
-        employeeInfo:employeeInfo,
+        employeeInfo: employeeInfo,
         role: role,
-        arrivaltime: `${mostRecentDocument.attendanceHistory[0].check_in.getHours()}:${mostRecentDocument.attendanceHistory[0].check_in.getMinutes()}`
+        arrivaltime: arrivaltime,
+        // arrivaltime: `${mostRecentDocument.attendanceHistory[0].check_in.getHours()}:${mostRecentDocument.attendanceHistory[0].check_in.getMinutes()}`,
       });
-//       let arrivaltime = 'N/A';
-//       console.log(mostRecentDocument.attendanceHistory)
-// if (mostRecentDocument.attendanceHistory[0] && mostRecentDocument.attendanceHistory[0].check_in) {
-//   arrivaltime = `${mostRecentDocument.attendanceHistory[0].check_in.getHours()}:${mostRecentDocument.attendanceHistory[0].check_in.getMinutes()}`;
-// }
-
-// res.status(200).json({
-//   employee: employee,
-//   employeeInfo: employeeInfo,
-//   role: role,
-//   arrivaltime: arrivaltime
-// });
-      
     } else {
-      console.log('No attendance records found.');
+      console.log("No attendance records found.");
       res.status(404).json({ message: "No attendance records found." });
     }
   } catch (error) {
-    console.error('Error fetching attendance:', error);
+    console.error("Error fetching attendance:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
 async function searchEmployee(req, res) {
   const { name } = req.query;
   try {
-    const employees = await Employee.find({ full_name: { $regex: `^${name}`, $options: 'i' } });
-    
+    const employees = await Employee.find({
+      full_name: { $regex: `^${name}`, $options: "i" },
+    });
+
     if (employees.length === 0) {
       return res.status(404).json({ error: "No employees found" });
     }
 
-    const attendanceInfo = await Promise.all(employees.map(async (employee) => {
-      const E_id = employee._id;
-      return await Attendance.findOne({ employee_id: E_id });
-    }));
+    const attendanceInfo = await Promise.all(
+      employees.map(async (employee) => {
+        const E_id = employee._id;
+        return await Attendance.findOne({ employee_id: E_id });
+      })
+    );
 
     return res.status(200).json({
       employeesWithAttendance: employees.map((employee, index) => ({
         employee: employee,
-        attendanceInfo: attendanceInfo[index]
-      }))
+        attendanceInfo: attendanceInfo[index],
+      })),
     });
   } catch (error) {
     console.error("Error searching employees:", error);
@@ -340,9 +352,8 @@ async function filterEmployeesByStatus(req, res) {
       })
     );
 
-    const filteredAttendanceWithEmployeeInfo = attendanceWithEmployeeInfo.filter(
-      Boolean
-    );
+    const filteredAttendanceWithEmployeeInfo =
+      attendanceWithEmployeeInfo.filter(Boolean);
 
     if (filteredAttendanceWithEmployeeInfo.length === 0) {
       return res.status(404).json({
@@ -393,7 +404,7 @@ async function filterEmployeesByDate(req, res) {
         return {
           name: employee.full_name,
           email: employee.email,
-          attendanceHistory: attendance.attendanceHistory.filter(entry => {
+          attendanceHistory: attendance.attendanceHistory.filter((entry) => {
             const entryDate = new Date(entry.date);
             return entryDate.toDateString() === filterDate.toDateString();
           }),
@@ -411,7 +422,7 @@ async function filterEmployeesByDate(req, res) {
 }
 async function getAttendanceCounts(req, res) {
   try {
-    const currentDate = moment('').startOf('day').toDate(); 
+    const currentDate = moment("").startOf("day").toDate();
     const employeeCounts = await Employee.countDocuments();
     const attendanceCounts = await Attendance.aggregate([
       {
@@ -425,31 +436,49 @@ async function getAttendanceCounts(req, res) {
       {
         $group: {
           _id: null,
-          absent: { $sum: { $cond: [{ $eq: ["$attendanceHistory.status", "Absent"] }, 1, 0] } },
-          present: { $sum: { $cond: [{ $eq: ["$attendanceHistory.status", "Present"] }, 1, 0] } },
-          late: { $sum: { $cond: [{ $eq: ["$attendanceHistory.status", "Late"] }, 1, 0] } },
-          leave: { $sum: { $cond: [{ $eq: ["$attendanceHistory.status", "on Leave"] }, 1, 0] } },
+          absent: {
+            $sum: {
+              $cond: [{ $eq: ["$attendanceHistory.status", "Absent"] }, 1, 0],
+            },
+          },
+          present: {
+            $sum: {
+              $cond: [{ $eq: ["$attendanceHistory.status", "Present"] }, 1, 0],
+            },
+          },
+          late: {
+            $sum: {
+              $cond: [{ $eq: ["$attendanceHistory.status", "Late"] }, 1, 0],
+            },
+          },
+          leave: {
+            $sum: {
+              $cond: [{ $eq: ["$attendanceHistory.status", "on Leave"] }, 1, 0],
+            },
+          },
         },
       },
     ]).exec();
 
     if (attendanceCounts.length === 0) {
-      return res.status(404).json({ message: "No attendance records found for the current date" });
+      return res
+        .status(404)
+        .json({ message: "No attendance records found for the current date" });
     }
 
     const { absent, present, late, leave } = attendanceCounts[0];
 
-    res.status(200).json({ absent, present, late, leave,employeeCounts });
+    res.status(200).json({ absent, present, late, leave, employeeCounts });
   } catch (error) {
-    console.error('Error fetching attendance counts:', error);
+    console.error("Error fetching attendance counts:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
-module.exports = { 
+module.exports = {
   performCheckIn,
   searchEmployee,
   filterEmployeesByDate,
   filterEmployeesByStatus,
   fetchAttendanceInfo,
-  getAttendanceCounts 
+  getAttendanceCounts,
 };

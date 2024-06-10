@@ -59,7 +59,8 @@ async function createLeaveApplication(req, res) {
     });
     await notification.save();
   } catch (error) {
-    res.status(500).json({ error: "Internal server error" });
+    console.log({error: error});
+    // res.status(500).json({ error: "Internal server error" });
   }
 }
 async function getLeaveApplicationById_forEmployee(req, res) {

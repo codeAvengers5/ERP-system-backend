@@ -11,7 +11,7 @@ router.get("/countEmployeeByYear", getEmployeeCountByYear);
 router.get("/getJobVacancyReport",getJobVacancyReport);
 router.get("/getRecruitmentReport",getRecruitmentReport);
 router.get("/getAttendanceReport",getAttendanceReport);
-router.get("/getEmployeeAttendanceReport/:employeeId", getEmployeeAttendanceReport);
+router.get("/getEmployeeAttendanceReport/:id", getEmployeeAttendanceReport);
 router.get("/getEventHeldReport",getEventHeldReport)
 router.get("/getEventAnalytics",getEventAnalytics)
 router.get("/getLeaveApplicationReport",getLeaveApplicationReport)

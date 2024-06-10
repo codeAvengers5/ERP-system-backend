@@ -47,16 +47,20 @@ async function ViewJobUser(req, res) {
     const jobVacancies = await JobSummary.find({ user_id: userId });
     console.log(jobVacancies);
     if (jobVacancies.length > 0) {
-      const jobs = await Promise.all(jobVacancies.map(async (jobVacancy) => {
-        const job = await JobPost.findById(jobVacancy.job_id);
-        return { job, jobVacancy };
-      }));
+      const jobs = await Promise.all(
+        jobVacancies.map(async (jobVacancy) => {
+          const job = await JobPost.findById(jobVacancy.job_id);
+          return { job, jobVacancy };
+        })
+      );
       res.status(200).json(jobs);
     } else {
       res.status(404).json({ error: "Job not found" });
     }
   } catch (error) {
-    res.status(500).json({ error: "An error occurred while fetching the job posts" });
+    res
+      .status(500)
+      .json({ error: "An error occurred while fetching the job posts" });
   }
 }
 async function JobApply(req, res) {
@@ -99,7 +103,9 @@ async function JobApply(req, res) {
       { resource_type: "raw" },
       async function (err, result) {
         if (err) {
-          return res.json("File format is wrong! Only pdf files are supported.");
+          return res.json(
+            "File format is wrong! Only pdf files are supported."
+          );
         }
         fs.unlinkSync(path);
         const cvUrl = result.url;
@@ -111,7 +117,7 @@ async function JobApply(req, res) {
           user_id: userId,
           status: "pending",
         });
-       await appliedUser.save();
+        await appliedUser.save();
         res.status(201).json({
           message: "You have Successfully applied to the job application",
           value: { appliedUser },
@@ -133,11 +139,25 @@ async function JobApply(req, res) {
 }
 async function ViewJobSummary(req, res) {
   try {
-    const jobsummary = await JobSummary.find({});
-    res.json(jobsummary);
+    const jobSummary = await JobSummary.find({});
+    if (jobSummary.length > 0) {
+      const jobs = await Promise.all(
+        jobSummary.map(async (jobVacancy) => {
+          const job = await JobPost.findById(jobVacancy.job_id);
+          return {
+            job_title: job.title,
+            job_summary: jobVacancy,
+          };
+        })
+      );
+      res.status(200).json(jobs);
+    } 
+    // else {
+    //   res.status(200).json([]);
+    // }
   } catch (error) {
-    // console.log(`Error in viewing the job post: ${error}`);
-    return res.status(500).json({ error: "Internal Server Error" });
+    console.log(`Error in viewing the job post: ${error}`);
+    // return res.status(500).json({ error: "Internal Server Error" });
   }
 }
 async function StatusChange(req, res) {

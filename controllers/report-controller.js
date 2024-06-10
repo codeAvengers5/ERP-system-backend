@@ -150,6 +150,10 @@ async function getAttendanceReport(req, res) {
 }
 async function getEmployeeAttendanceReport(req, res) {
   const { id } = req.params;
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1; // getMonth() returns 0-11
+
   try {
     const result = await Attendance.aggregate([
       {
@@ -161,28 +165,29 @@ async function getEmployeeAttendanceReport(req, res) {
         $unwind: "$attendanceHistory",
       },
       {
+        $project: {
+          year: { $year: "$attendanceHistory.date" },
+          month: { $month: "$attendanceHistory.date" },
+          status: "$attendanceHistory.status",
+        },
+      },
+      {
+        $match: {
+          year: currentYear,
+          month: currentMonth,
+        },
+      },
+      {
         $group: {
-          _id: {
-            year: { $year: "$attendanceHistory.date" },
-            month: { $month: "$attendanceHistory.date" },
-            tag: "$attendanceHistory.status",
-          },
+          _id: "$status",
           count: { $sum: 1 },
         },
       },
       {
         $project: {
-          year: "$_id.year",
-          month: "$_id.month",
-          tag: "$_id.tag",
+          status: "$_id",
           count: 1,
           _id: 0,
-        },
-      },
-      {
-        $sort: {
-          year: 1,
-          month: 1,
         },
       },
     ]);
@@ -193,6 +198,7 @@ async function getEmployeeAttendanceReport(req, res) {
     console.log(error);
   }
 }
+
 async function getLeaveApplicationReport(req, res) {
   try {
     const result = await LeaveApplication.aggregate([
