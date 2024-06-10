@@ -163,8 +163,8 @@ async function LoginSiteUser(req, res, next) {
     res.cookie("jwt", token, cookieOptions);
     res.status(200).json({ token: token, message: "LoggedIn" });
   } catch (error) {
-    // console.log("Login failed with error : ", error);
-    return res.status(500).json({ Error: error });
+    console.log("Login failed with error : ", error);
+    // return res.status(500).json({ Error: error });
   }
 }
 async function ForgotPassword(req, res, next) {
